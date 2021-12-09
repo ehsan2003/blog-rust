@@ -1,5 +1,5 @@
 #[async_trait::async_trait]
-pub trait RandomService {
-    async fn secure_random_password() -> String;
-    async fn random_id() -> String;
+pub trait RandomService: Send + Sync {
+    async fn secure_random_password(&self) -> String;
+    async fn random_id(&self) -> String;
 }
