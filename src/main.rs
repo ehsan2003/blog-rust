@@ -1,8 +1,10 @@
+use serde::Deserialize;
+
 mod access_management;
 mod errors;
-mod utils;
+mod test_utils;
 mod users;
+mod utils;
 
-fn main() {
-    println!("Hello, world!");
-}
+#[tokio::main]
+async fn main() {}
