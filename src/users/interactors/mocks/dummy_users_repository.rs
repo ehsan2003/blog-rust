@@ -6,23 +6,23 @@ pub struct DummyUsersRepository;
 
 #[async_trait::async_trait]
 impl UsersRepository for DummyUsersRepository {
-    async fn get_by_id(&self, id: &str) -> UnknownResult<Option<User>> {
+    async fn get_by_id(&self, _id: &str) -> UnknownResult<Option<User>> {
         unimplemented!()
     }
 
-    async fn get_by_email(&self, email: &str) -> UnknownResult<Option<User>> {
+    async fn get_by_email(&self, _email: &str) -> UnknownResult<Option<User>> {
         unimplemented!()
     }
 
-    async fn create(&self, user: &User) -> UnknownResult<()> {
+    async fn create(&self, _user: &User) -> UnknownResult<()> {
         unimplemented!()
     }
 
-    async fn update(&self, user: &User) -> UnknownResult<()> {
+    async fn update(&self, _user: &User) -> UnknownResult<()> {
         unimplemented!()
     }
 
-    async fn delete(&self, id: &str) -> UnknownResult<()> {
+    async fn delete(&self, _id: &str) -> UnknownResult<()> {
         unimplemented!()
     }
 }

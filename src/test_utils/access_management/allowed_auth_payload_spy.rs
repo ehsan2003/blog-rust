@@ -1,7 +1,5 @@
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 use std::sync::Mutex;
-
-use dyn_clone::DynClone;
 
 use crate::access_management::Role;
 use crate::utils::AuthPayload;

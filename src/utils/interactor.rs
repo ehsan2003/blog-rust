@@ -1,4 +1,4 @@
-use crate::errors::{ApplicationException, ApplicationResult};
+use crate::errors::ApplicationResult;
 
 #[async_trait::async_trait]
 pub trait Interactor<Input, Output = ()> {

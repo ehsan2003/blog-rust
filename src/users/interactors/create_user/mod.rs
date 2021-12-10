@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use crate::access_management::RoleFactory;
 use crate::errors::{ApplicationException, ApplicationResult};
-use crate::users::interactors::mocks::dummy_users_repository::DummyUsersRepository;
 use crate::users::interactors::traits::UsersRepository;
 use crate::utils::{CryptoService, Interactor, RandomService, Validatable};
 
@@ -62,7 +61,7 @@ pub struct CreateUserOutput {
 
 #[async_trait::async_trait]
 impl Interactor<CreateUserInput, CreateUserOutput> for CreateUserInteractor {
-    async fn execute(&self, input: CreateUserInput) -> ApplicationResult<CreateUserOutput> {
+    async fn execute(&self, _input: CreateUserInput) -> ApplicationResult<CreateUserOutput> {
         Err(ApplicationException::ValidationException { key: "".to_string(), message: "".to_string(), value: "".to_string() })
     }
 }
@@ -117,6 +116,6 @@ mod tests {
             user_name: "pest".to_owned(),
             user_email: "a@b.com".to_owned(),
         };
-        let err = i.execute(data).await.unwrap_err();
+        let _err = i.execute(data).await.unwrap_err();
     }
 }
