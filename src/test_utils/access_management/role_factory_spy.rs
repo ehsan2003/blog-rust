@@ -12,3 +12,11 @@ impl RoleFactory for RoleFactorySpy {
         None
     }
 }
+
+impl RoleFactorySpy {
+    pub fn new() -> RoleFactorySpy {
+        RoleFactorySpy {
+            called_with: Mutex::new(Vec::new()),
+        }
+    }
+}

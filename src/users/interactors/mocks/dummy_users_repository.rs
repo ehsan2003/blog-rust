@@ -2,7 +2,7 @@ use crate::errors::UnknownResult;
 use crate::users::domain::User;
 use crate::users::interactors::traits::UsersRepository;
 
-pub struct DummyUsersRepository {}
+pub struct DummyUsersRepository;
 
 #[async_trait::async_trait]
 impl UsersRepository for DummyUsersRepository {

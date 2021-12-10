@@ -1,1 +1,1 @@
-mod dummy_users_repository;
+pub mod dummy_users_repository;

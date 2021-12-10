@@ -12,3 +12,9 @@ impl RandomService for DummyRandomService {
         unimplemented!()
     }
 }
+
+impl DummyRandomService {
+    pub fn new() -> Self {
+        DummyRandomService {}
+    }
+}

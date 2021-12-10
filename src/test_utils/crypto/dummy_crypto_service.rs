@@ -1,7 +1,7 @@
 use crate::errors::UnknownResult;
 use crate::utils::CryptoService;
 
-struct DummyCryptoService;
+pub struct DummyCryptoService;
 
 #[async_trait::async_trait]
 impl CryptoService for DummyCryptoService {
