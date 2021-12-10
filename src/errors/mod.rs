@@ -1,7 +1,14 @@
 pub enum ApplicationException {
     NotFoundException(String),
-    DuplicationException { key: String, value: String },
-    ValidationException { key: String, value: String, message: String },
+    DuplicationException {
+        key: String,
+        value: String,
+    },
+    ValidationException {
+        key: String,
+        value: String,
+        message: String,
+    },
     InternalException(UnknownException),
 }
 

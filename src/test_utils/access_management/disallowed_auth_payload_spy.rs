@@ -11,7 +11,7 @@ pub struct DisallowedAuthPayloadSpy {
 impl Clone for DisallowedAuthPayloadSpy {
     fn clone(&self) -> Self {
         DisallowedAuthPayloadSpy {
-            called_with: Mutex::new(self.called_with.lock().unwrap().clone())
+            called_with: Mutex::new(self.called_with.lock().unwrap().clone()),
         }
     }
 }

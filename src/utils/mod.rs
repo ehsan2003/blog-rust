@@ -4,10 +4,8 @@ pub use interactor::Interactor;
 pub use random_service::RandomService;
 pub use validatable::Validatable;
 
-mod random_service;
+mod auth_payload;
 mod crypto_service;
 mod interactor;
-mod auth_payload;
+mod random_service;
 mod validatable;
-
-

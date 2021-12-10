@@ -62,7 +62,11 @@ pub struct CreateUserOutput {
 #[async_trait::async_trait]
 impl Interactor<CreateUserInput, CreateUserOutput> for CreateUserInteractor {
     async fn execute(&self, _input: CreateUserInput) -> ApplicationResult<CreateUserOutput> {
-        Err(ApplicationException::ValidationException { key: "".to_string(), message: "".to_string(), value: "".to_string() })
+        Err(ApplicationException::ValidationException {
+            key: "".to_string(),
+            message: "".to_string(),
+            value: "".to_string(),
+        })
     }
 }
 
@@ -77,11 +81,13 @@ mod tests {
 
     struct CreationResult {}
 
-    fn create_interactor() -> (CreateUserInteractor,
-                               Arc<DummyUsersRepository>,
-                               Arc<RoleFactorySpy>,
-                               Arc<DummyCryptoService>,
-                               Arc<DummyRandomService>, ) {
+    fn create_interactor() -> (
+        CreateUserInteractor,
+        Arc<DummyUsersRepository>,
+        Arc<RoleFactorySpy>,
+        Arc<DummyCryptoService>,
+        Arc<DummyRandomService>,
+    ) {
         let random_service = Arc::new(DummyRandomService);
         let crypto_service = Arc::new(DummyCryptoService);
         let repo = Arc::new(DummyUsersRepository);
