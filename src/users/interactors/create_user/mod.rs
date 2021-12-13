@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::access_management::RoleFactory;
-use crate::errors::{ApplicationException, ApplicationResult};
+use crate::errors::{ApplicationException, ApplicationResult, ValidationError};
 use crate::users::interactors::traits::UsersRepository;
 use crate::utils::{CryptoService, Interactor, RandomService, Validatable};
 
@@ -12,6 +12,7 @@ pub struct CreateUserInteractor {
     role_factory: Arc<dyn RoleFactory>,
 }
 
+// dependencies
 impl CreateUserInteractor {
     pub fn new(
         random_service: Arc<dyn RandomService>,
@@ -48,8 +49,8 @@ pub struct CreateUserInput {
 }
 
 impl Validatable for CreateUserInput {
-    fn is_valid(&self) -> bool {
-        true
+    fn is_valid(&self) -> Result<(), ValidationError> {
+        Ok(())
     }
 }
 
@@ -72,7 +73,7 @@ impl Interactor<CreateUserInput, CreateUserOutput> for CreateUserInteractor {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::access_management::role_factory_spy::RoleFactorySpy;
+    use crate::test_utils::access_management::unknown_role_role_factory_spy::UnknownRoleRoleFactorySpy;
     use crate::test_utils::crypto::dummy_crypto_service::DummyCryptoService;
     use crate::test_utils::crypto::dummy_random_service::DummyRandomService;
     use crate::users::interactors::mocks::dummy_users_repository::DummyUsersRepository;
@@ -82,14 +83,14 @@ mod tests {
     fn create_interactor() -> (
         CreateUserInteractor,
         Arc<DummyUsersRepository>,
-        Arc<RoleFactorySpy>,
+        Arc<UnknownRoleRoleFactorySpy>,
         Arc<DummyCryptoService>,
         Arc<DummyRandomService>,
     ) {
         let random_service = Arc::new(DummyRandomService);
         let crypto_service = Arc::new(DummyCryptoService);
         let repo = Arc::new(DummyUsersRepository);
-        let role_factory = Arc::new(RoleFactorySpy::new());
+        let role_factory = Arc::new(UnknownRoleRoleFactorySpy::new());
 
         let arc_cloned_random_service = Arc::clone(&random_service);
         let arc_cloned_crypto_service = Arc::clone(&crypto_service);
