@@ -42,9 +42,9 @@ impl CreateUserInteractor {
 
 #[derive(Debug, Clone)]
 pub struct CreateUserInput {
-    user_role: String,
-    user_email: String,
-    user_name: String,
+    role: String,
+    email: String,
+    name: String,
 }
 
 impl Validatable for CreateUserInput {
@@ -78,8 +78,6 @@ mod tests {
     use crate::users::interactors::mocks::dummy_users_repository::DummyUsersRepository;
 
     use super::*;
-
-    struct CreationResult {}
 
     fn create_interactor() -> (
         CreateUserInteractor,
@@ -118,9 +116,9 @@ mod tests {
     async fn should_throw_validation_error_when_data_is_invalid() {
         let (i, ..) = create_interactor();
         let data = CreateUserInput {
-            user_role: "test".to_owned(),
-            user_name: "pest".to_owned(),
-            user_email: "a@b.com".to_owned(),
+            role: "test".to_owned(),
+            name: "pest".to_owned(),
+            email: "a@b.com".to_owned(),
         };
         let _err = i.execute(data).await.unwrap_err();
     }
