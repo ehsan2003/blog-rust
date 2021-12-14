@@ -8,7 +8,7 @@ pub struct AllowedRoleRoleFactorySpy {
 }
 
 impl RoleFactory for AllowedRoleRoleFactorySpy {
-    fn is_valid_role_name(&self, role_name: &str) -> bool {
+    fn is_valid_role_name(&self, _role_name: &str) -> bool {
         true
     }
 

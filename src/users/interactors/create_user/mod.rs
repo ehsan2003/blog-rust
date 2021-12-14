@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::access_management::{Role, RoleFactory};
+use crate::access_management::RoleFactory;
 use crate::errors::{ApplicationException, ApplicationResult, ValidationError};
 use crate::users::domain::User;
 use crate::users::interactors::traits::UsersRepository;
@@ -211,7 +211,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_call_role_factory_with_passed_role() {
-        let (mut i, _, spy, ..) = create_interactor();
+        let (i, _, spy, ..) = create_interactor();
 
         let valid_input = valid_input();
 
@@ -221,7 +221,7 @@ mod tests {
     }
     #[tokio::test]
     async fn should_call_generate_random_password() {
-        let (mut i, _, _, _, spy) = create_interactor();
+        let (i, _, _, _, spy) = create_interactor();
         let valid_input = valid_input();
         i.execute(valid_input.clone()).await.unwrap();
 
@@ -229,7 +229,7 @@ mod tests {
     }
     #[tokio::test]
     async fn should_hash_generated_password() {
-        let (mut i, _, _, mut crypto_service, _) = create_interactor();
+        let (i, _, _, crypto_service, _) = create_interactor();
         i.execute(valid_input()).await.unwrap();
         crypto_service.assert_hash_calls(vec![SECURE_RANDOM_PASSWORD.to_owned()]);
     }
@@ -251,7 +251,7 @@ mod tests {
     }
     #[tokio::test]
     async fn should_store_a_user_in_repo_which_contains_correct_fields() {
-        let (mut i, repo, _, _, _) = create_interactor();
+        let (i, repo, _, _, _) = create_interactor();
         let input = valid_input();
         i.execute(input.clone()).await.unwrap();
         let stored_user = repo

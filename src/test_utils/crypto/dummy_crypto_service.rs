@@ -27,11 +27,11 @@ impl CryptoServiceSpy {
     }
 
     pub fn assert_hash_calls(&self, expected: Vec<String>) {
-        let mut called_with = self.hash_called_with.lock().unwrap();
+        let called_with = self.hash_called_with.lock().unwrap();
         assert_eq!(*called_with, expected);
     }
     pub fn assert_verify_calls(&self, expected: Vec<(String, String)>) {
-        let mut called_with = self.verify_called_with.lock().unwrap();
+        let called_with = self.verify_called_with.lock().unwrap();
         assert_eq!(*called_with, expected);
     }
 }
