@@ -7,6 +7,9 @@ pub struct UnknownRoleRoleFactorySpy {
 }
 
 impl RoleFactory for UnknownRoleRoleFactorySpy {
+    fn is_valid_role_name(&self, role_name: &str) -> bool {
+        false
+    }
     fn create_role(&self, role_name: &str) -> Option<Box<dyn Role>> {
         self.called_with.lock().unwrap().push(role_name.to_string());
         None

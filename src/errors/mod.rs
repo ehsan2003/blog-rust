@@ -1,3 +1,6 @@
+use std::error::Error;
+
+#[derive(Debug)]
 pub enum ApplicationException {
     NotFoundException(String),
     DuplicationException {
@@ -23,6 +26,16 @@ pub struct ValidationError {
     pub message: String,
 }
 
+impl ValidationError {
+    pub fn new(key: String, value: String, message: String) -> Self {
+        Self {
+            key,
+            value,
+            message,
+        }
+    }
+}
+
 impl From<ValidationError> for ApplicationException {
     fn from(error: ValidationError) -> Self {
         ApplicationException::ValidationException {
@@ -30,5 +43,11 @@ impl From<ValidationError> for ApplicationException {
             value: error.value,
             message: error.message,
         }
+    }
+}
+
+impl From<Box<dyn std::error::Error + Send + Sync>> for ApplicationException {
+    fn from(error: Box<dyn Error + Send + Sync>) -> Self {
+        ApplicationException::InternalException(error)
     }
 }
