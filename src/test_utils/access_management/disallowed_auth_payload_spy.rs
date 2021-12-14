@@ -19,12 +19,20 @@ impl Clone for DisallowedAuthPayloadSpy {
 impl Role for DisallowedAuthPayloadSpy {
     fn can(&self, action: &str) -> bool {
         self.called_with.lock().unwrap().push(action.to_string());
-        true
+        false
     }
 }
 
 impl AuthPayload for DisallowedAuthPayloadSpy {
     fn get_user_id(&self) -> String {
-        "super".to_string()
+        "WEAK".to_string()
+    }
+}
+
+impl DisallowedAuthPayloadSpy {
+    pub fn new() -> Self {
+        DisallowedAuthPayloadSpy {
+            called_with: Mutex::new(Vec::new()),
+        }
     }
 }

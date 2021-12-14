@@ -4,6 +4,7 @@ use crate::access_management::RoleFactory;
 use crate::errors::{ApplicationException, ApplicationResult, ValidationError};
 use crate::users::domain::User;
 use crate::users::interactors::traits::UsersRepository;
+use crate::utils::AuthPayload;
 use crate::utils::{CryptoService, Interactor, RandomService, Validatable};
 
 pub struct CreateUserInteractor {
@@ -114,10 +115,16 @@ pub struct CreateUserOutput {
     user_id: String,
 }
 
-#[async_trait::async_trait]
-impl Interactor<CreateUserInput, CreateUserOutput> for CreateUserInteractor {
-    async fn execute(&self, input: CreateUserInput) -> ApplicationResult<CreateUserOutput> {
+impl CreateUserInteractor {
+    async fn execute(
+        &self,
+        input: CreateUserInput,
+        auth: Box<dyn AuthPayload>,
+    ) -> ApplicationResult<CreateUserOutput> {
         self.validate_or_fail(&input)?;
+        if !auth.can("CREATE_USER") {
+            return Err(ApplicationException::ForBiddenException("".to_string()));
+        }
         self.check_email_or_fail(&input).await?;
         let random_password = self.random_service.secure_random_password().await?;
         let password_hash = self.crypto_service.hash(&random_password).await?;
@@ -142,15 +149,19 @@ impl Interactor<CreateUserInput, CreateUserOutput> for CreateUserInteractor {
 
 #[cfg(test)]
 mod tests {
+    use utils::*;
+
+    use crate::test_utils::access_management::allowed_auth_payload_spy::AllowedAuthPayloadSpy;
     use crate::test_utils::access_management::allowed_role::AllowedRole;
     use crate::test_utils::access_management::allowed_role_role_factory_spy::AllowedRoleRoleFactorySpy;
+    use crate::test_utils::access_management::disallowed_auth_payload_spy::DisallowedAuthPayloadSpy;
     use crate::test_utils::access_management::unknown_role_role_factory_spy::UnknownRoleRoleFactorySpy;
     use crate::test_utils::crypto::dummy_crypto_service::{CryptoServiceSpy, HASH_RESULT};
     use crate::test_utils::crypto::dummy_random_service::{
         RandomServiceSpy, RANDOM_ID, SECURE_RANDOM_PASSWORD,
     };
     use crate::users::domain::User;
-    use crate::users::interactors::mocks::dummy_users_repository::FakeUsersRepository;
+    use crate::users::interactors::mocks::fake_users_repository::FakeUsersRepository;
 
     use super::*;
 
@@ -196,7 +207,7 @@ mod tests {
             email: "b.com".to_owned(),
         }];
         for input in inputs {
-            let error = i.execute(input).await.unwrap_err();
+            let error = i.execute(input, auth()).await.unwrap_err();
             assert_validation_error(error);
         }
     }
@@ -205,7 +216,7 @@ mod tests {
     async fn should_throw_validation_error_when_the_role_is_unknown_for_the_role_factory() {
         let (mut i, ..) = create_interactor();
         i.set_role_factory(Arc::new(UnknownRoleRoleFactorySpy::new()));
-        let error = i.execute(valid_input()).await.unwrap_err();
+        let error = i.execute(valid_input(), auth()).await.unwrap_err();
         assert_validation_error_with_key(error, "role");
     }
 
@@ -215,7 +226,7 @@ mod tests {
 
         let valid_input = valid_input();
 
-        i.execute(valid_input.clone()).await.unwrap();
+        i.execute(valid_input.clone(), auth()).await.unwrap();
         let called_with = spy.called_with.lock().unwrap();
         assert_eq!(*called_with, vec![valid_input.role.clone()]);
     }
@@ -223,14 +234,14 @@ mod tests {
     async fn should_call_generate_random_password() {
         let (i, _, _, _, spy) = create_interactor();
         let valid_input = valid_input();
-        i.execute(valid_input.clone()).await.unwrap();
+        i.execute(valid_input.clone(), auth()).await.unwrap();
 
         spy.assert_secure_random_called();
     }
     #[tokio::test]
     async fn should_hash_generated_password() {
         let (i, _, _, crypto_service, _) = create_interactor();
-        i.execute(valid_input()).await.unwrap();
+        i.execute(valid_input(), auth()).await.unwrap();
         crypto_service.assert_hash_calls(vec![SECURE_RANDOM_PASSWORD.to_owned()]);
     }
     #[tokio::test]
@@ -246,14 +257,14 @@ mod tests {
             id: "id".to_owned(),
         }])));
 
-        let err = i.execute(valid_input()).await.unwrap_err();
+        let err = i.execute(valid_input(), auth()).await.unwrap_err();
         assert_duplication_error(err, "email")
     }
     #[tokio::test]
     async fn should_store_a_user_in_repo_which_contains_correct_fields() {
         let (i, repo, _, _, _) = create_interactor();
         let input = valid_input();
-        i.execute(input.clone()).await.unwrap();
+        i.execute(input.clone(), auth()).await.unwrap();
         let stored_user = repo
             .users
             .lock()
@@ -269,36 +280,62 @@ mod tests {
     #[tokio::test]
     async fn should_return_random_password_on_result() {
         let (i, _, _, _, _) = create_interactor();
-        let result = i.execute(valid_input()).await.unwrap();
+        let result = i.execute(valid_input(), auth()).await.unwrap();
         assert_eq!(result.password, SECURE_RANDOM_PASSWORD);
     }
+    #[tokio::test]
+    async fn should_return_forbidden_error_when_the_auth_payload_is_not_allowed_to_create_user() {
+        let (i, ..) = create_interactor();
+        let result = i
+            .execute(valid_input(), Box::from(DisallowedAuthPayloadSpy::new()))
+            .await
+            .unwrap_err();
+        assert_forbidden_error(result);
+    }
+    mod utils {
+        use crate::errors::ApplicationException;
+        use crate::test_utils::access_management::allowed_auth_payload_spy::AllowedAuthPayloadSpy;
+        use crate::users::interactors::create_user::CreateUserInput;
 
-    fn assert_duplication_error(err: ApplicationException, valid_key: &str) {
-        if let ApplicationException::DuplicationException { key, .. } = err {
-            assert_eq!(key, valid_key);
-        } else {
-            assert!(false);
+        pub fn assert_forbidden_error(err: ApplicationException) {
+            if let ApplicationException::ForBiddenException(e) = err {
+            } else {
+                panic!("should be forbidden error");
+            }
         }
-    }
+        pub fn auth() -> Box<AllowedAuthPayloadSpy> {
+            Box::from(AllowedAuthPayloadSpy::new())
+        }
 
-    fn valid_input() -> CreateUserInput {
-        CreateUserInput {
-            role: "test".to_owned(),
-            name: "pest".to_owned(),
-            email: "t@email.com".to_owned(),
+        pub fn assert_duplication_error(err: ApplicationException, valid_key: &str) {
+            if let ApplicationException::DuplicationException { key, .. } = err {
+                assert_eq!(key, valid_key);
+            } else {
+                assert!(false);
+            }
         }
-    }
-    async fn assert_validation_error(error: ApplicationException) {
-        if let ApplicationException::ValidationException { .. } = error {
-        } else {
-            assert!(false);
+
+        pub fn valid_input() -> CreateUserInput {
+            CreateUserInput {
+                role: "test".to_owned(),
+                name: "pest".to_owned(),
+                email: "t@email.com".to_owned(),
+            }
         }
-    }
-    async fn assert_validation_error_with_key(error: ApplicationException, valid_key: &str) {
-        if let ApplicationException::ValidationException { key, .. } = error {
-            assert_eq!(valid_key, key);
-        } else {
-            assert!(false, "expected ValidationException");
+
+        pub fn assert_validation_error(error: ApplicationException) {
+            if let ApplicationException::ValidationException { .. } = error {
+            } else {
+                assert!(false);
+            }
+        }
+
+        pub fn assert_validation_error_with_key(error: ApplicationException, valid_key: &str) {
+            if let ApplicationException::ValidationException { key, .. } = error {
+                assert_eq!(valid_key, key);
+            } else {
+                assert!(false, "expected ValidationException");
+            }
         }
     }
 }

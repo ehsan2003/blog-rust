@@ -13,6 +13,7 @@ pub enum ApplicationException {
         message: String,
     },
     InternalException(UnknownException),
+    ForBiddenException(String),
 }
 
 pub type UnknownException = Box<dyn std::error::Error + Send + Sync>;

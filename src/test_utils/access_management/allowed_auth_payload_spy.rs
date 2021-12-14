@@ -17,6 +17,18 @@ impl Clone for AllowedAuthPayloadSpy {
     }
 }
 
+impl AllowedAuthPayloadSpy {
+    pub fn new() -> Self {
+        Self {
+            called_with: Mutex::new(Vec::new()),
+        }
+    }
+
+    pub fn called_with(&self) -> Vec<String> {
+        self.called_with.lock().unwrap().clone()
+    }
+}
+
 impl Role for AllowedAuthPayloadSpy {
     fn can(&self, action: &str) -> bool {
         self.called_with.lock().unwrap().push(action.to_string());
