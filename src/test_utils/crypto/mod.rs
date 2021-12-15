@@ -1,2 +1,2 @@
-pub mod dummy_crypto_service;
-pub mod dummy_random_service;
+pub mod crypto_service_spy;
+pub mod random_service_spy;

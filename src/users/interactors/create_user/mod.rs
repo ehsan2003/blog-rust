@@ -157,8 +157,8 @@ mod tests {
     use crate::test_utils::access_management::allowed_role_role_factory_spy::AllowedRoleRoleFactorySpy;
     use crate::test_utils::access_management::disallowed_auth_payload_spy::DisallowedAuthPayloadSpy;
     use crate::test_utils::access_management::unknown_role_role_factory_spy::UnknownRoleRoleFactorySpy;
-    use crate::test_utils::crypto::dummy_crypto_service::{CryptoServiceSpy, HASH_RESULT};
-    use crate::test_utils::crypto::dummy_random_service::{
+    use crate::test_utils::crypto::crypto_service_spy::{CryptoServiceSpy, HASH_RESULT};
+    use crate::test_utils::crypto::random_service_spy::{
         RandomServiceSpy, RANDOM_ID, SECURE_RANDOM_PASSWORD,
     };
     use crate::users::domain::User;
