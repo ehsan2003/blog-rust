@@ -29,3 +29,10 @@ pub fn assert_validation_error_with_key(error: ApplicationException, valid_key: 
         assert!(false, "expected ValidationException");
     }
 }
+
+pub fn assert_bad_request_error(error: ApplicationException) {
+    assert!(matches!(
+        error,
+        ApplicationException::BadRequestException { .. }
+    ));
+}

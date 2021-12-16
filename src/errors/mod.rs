@@ -1,11 +1,12 @@
 use std::error::Error;
 
-pub mod validation;
 pub mod auth_payload_id_not_found;
+pub mod validation;
 
 #[derive(Debug)]
 pub enum ApplicationException {
     NotFoundException(String),
+    BadRequestException(String),
     DuplicationException {
         key: String,
         value: String,
