@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use crate::access_management::RoleFactory;
-use crate::errors::{ApplicationException, ApplicationResult, ValidationError};
+use crate::errors::validation::ValidationError;
+use crate::errors::{ApplicationException, ApplicationResult};
 use crate::users::domain::User;
 use crate::users::interactors::actions::CREATE_USER_ACTION;
 use crate::users::interactors::traits::UsersRepository;
@@ -152,7 +153,6 @@ impl CreateUserInteractor {
 mod tests {
     use utils::*;
 
-    use crate::test_utils::access_management::allowed_auth_payload_spy::AllowedAuthPayloadSpy;
     use crate::test_utils::access_management::allowed_role::AllowedRole;
     use crate::test_utils::access_management::allowed_role_role_factory_spy::AllowedRoleRoleFactorySpy;
     use crate::test_utils::access_management::disallowed_auth_payload_spy::DisallowedAuthPayloadSpy;
@@ -160,6 +160,10 @@ mod tests {
     use crate::test_utils::crypto::crypto_service_spy::{CryptoServiceSpy, HASH_RESULT};
     use crate::test_utils::crypto::random_service_spy::{
         RandomServiceSpy, RANDOM_ID, SECURE_RANDOM_PASSWORD,
+    };
+    use crate::test_utils::errors_assertion::{
+        assert_duplication_error, assert_forbidden_error, assert_validation_error,
+        assert_validation_error_with_key,
     };
     use crate::users::domain::User;
     use crate::users::interactors::mocks::fake_users_repository::FakeUsersRepository;
@@ -299,22 +303,8 @@ mod tests {
         use crate::test_utils::access_management::allowed_auth_payload_spy::AllowedAuthPayloadSpy;
         use crate::users::interactors::create_user::CreateUserInput;
 
-        pub fn assert_forbidden_error(err: ApplicationException) {
-            if let ApplicationException::ForBiddenException(e) = err {
-            } else {
-                panic!("should be forbidden error");
-            }
-        }
         pub fn auth() -> AllowedAuthPayloadSpy {
             AllowedAuthPayloadSpy::new()
-        }
-
-        pub fn assert_duplication_error(err: ApplicationException, valid_key: &str) {
-            if let ApplicationException::DuplicationException { key, .. } = err {
-                assert_eq!(key, valid_key);
-            } else {
-                assert!(false);
-            }
         }
 
         pub fn valid_input() -> CreateUserInput {
@@ -322,21 +312,6 @@ mod tests {
                 role: "test".to_owned(),
                 name: "pest".to_owned(),
                 email: "t@email.com".to_owned(),
-            }
-        }
-
-        pub fn assert_validation_error(error: ApplicationException) {
-            if let ApplicationException::ValidationException { .. } = error {
-            } else {
-                assert!(false);
-            }
-        }
-
-        pub fn assert_validation_error_with_key(error: ApplicationException, valid_key: &str) {
-            if let ApplicationException::ValidationException { key, .. } = error {
-                assert_eq!(valid_key, key);
-            } else {
-                assert!(false, "expected ValidationException");
             }
         }
     }

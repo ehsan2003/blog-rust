@@ -35,9 +35,10 @@ impl Role for AllowedAuthPayloadSpy {
         true
     }
 }
+pub const ALLOWED_AUTH_PAYLOAD_ID: &str = "ALLOWED_ID";
 
 impl AuthPayload for AllowedAuthPayloadSpy {
     fn get_user_id(&self) -> String {
-        "super".to_string()
+        ALLOWED_AUTH_PAYLOAD_ID.to_string()
     }
 }
