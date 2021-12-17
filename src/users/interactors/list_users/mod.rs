@@ -5,7 +5,7 @@ use crate::errors::ApplicationException::ForBiddenException;
 use crate::errors::ApplicationResult;
 use crate::users::interactors::actions::LIST_USERS_ACTION;
 use crate::users::interactors::traits::UsersRepository;
-use crate::users::interactors::utils::VisibleUser;
+use crate::users::interactors::utils::{get_visible_user, VisibleUser};
 use crate::utils::AuthPayload;
 
 #[derive(Debug, Clone)]
@@ -39,12 +39,7 @@ impl ListUsersInteractor {
         return Ok(ListUsersOutput {
             users: users
                 .into_iter()
-                .map(|user| VisibleUser {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: self.role_namer.name_role(user.role).unwrap(),
-                })
+                .map(|user| get_visible_user(user, self.role_namer.clone()))
                 .collect(),
         });
     }

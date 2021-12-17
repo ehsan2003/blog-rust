@@ -7,3 +7,4 @@ pub mod login;
 pub mod mocks;
 pub mod traits;
 pub mod utils;
+pub mod get_me;
