@@ -52,7 +52,7 @@ impl ChangeUsersPasswordInteractor {
         input: ChangeUsersPasswordInput,
     ) -> ApplicationResult<()> {
         if !auth.can(CHANGE_OTHERS_PASSWORD_ACTION) {
-            return Err(ApplicationException::ForBiddenException("".to_string()));
+            return Err(ApplicationException::ForBiddenException("".into()));
         }
         let modifier_user = self.auth_resolver.resolve(auth).await?;
         if !self
@@ -60,11 +60,11 @@ impl ChangeUsersPasswordInteractor {
             .authorize(&modifier_user, &input.password)
             .await?
         {
-            return Err(ApplicationException::ForBiddenException("".to_string()));
+            return Err(ApplicationException::ForBiddenException("".into()));
         }
 
         let mut user = match self.repo.get_by_id(&input.user_id).await? {
-            None => return Err(ApplicationException::NotFoundException("".to_string())),
+            None => return Err(ApplicationException::NotFoundException("".into())),
             Some(user) => user,
         };
         user.password = self.crypto.hash(&input.new_password).await?;
@@ -95,19 +95,19 @@ mod tests {
     }
     fn modifying_user() -> User {
         User {
-            id: "1".to_string(),
-            email: "a@email.com".to_string(),
-            password: "password".to_string(),
-            name: "modifying".to_string(),
+            id: "1".into(),
+            email: "a@email.com".into(),
+            password: "password".into(),
+            name: "modifying".into(),
             role: Box::from(RoleSpy::new_allowed()),
         }
     }
     fn modifier_user() -> User {
         User {
-            id: "2".to_string(),
-            email: "b@email.com".to_string(),
-            password: "password".to_string(),
-            name: "modifier".to_string(),
+            id: "2".into(),
+            email: "b@email.com".into(),
+            password: "password".into(),
+            name: "modifier".into(),
             role: Box::from(RoleSpy::new_allowed()),
         }
     }
@@ -116,8 +116,8 @@ mod tests {
 
         ChangeUsersPasswordInput {
             user_id: initial_user.id,
-            new_password: "new_password".to_string(),
-            password: "password".to_string(),
+            new_password: "new_password".into(),
+            password: "password".into(),
         }
     }
     fn create_interactor() -> CreationResult {
@@ -147,10 +147,10 @@ mod tests {
     async fn should_throw_error_if_user_id_not_found() {
         let CreationResult { interactor, .. } = create_interactor();
         let mut valid_input = valid_input();
-        valid_input.user_id = "not found".to_string();
+        valid_input.user_id = "not found".into();
         let error = interactor
             .execute(
-                &AuthPayloadSpy::new_allowed("ALLOWED_ID".to_string()),
+                &AuthPayloadSpy::new_allowed("ALLOWED_ID".into()),
                 valid_input,
             )
             .await
@@ -160,7 +160,7 @@ mod tests {
     #[tokio::test]
     async fn should_throw_error_if_payload_is_not_allowed() {
         let CreationResult { interactor, .. } = create_interactor();
-        let payload_spy = AuthPayloadSpy::new_disallowed("WEAK".to_string());
+        let payload_spy = AuthPayloadSpy::new_disallowed("WEAK".into());
         let valid_input = valid_input();
         let error = interactor
             .execute(&payload_spy, valid_input)
@@ -172,7 +172,7 @@ mod tests {
     #[tokio::test]
     async fn should_pass_appropriate_action_to_payload() {
         let CreationResult { interactor, .. } = create_interactor();
-        let payload_spy = AuthPayloadSpy::new_allowed("ALLOWED_ID".to_string());
+        let payload_spy = AuthPayloadSpy::new_allowed("ALLOWED_ID".into());
         let valid_input = valid_input();
         interactor.execute(&payload_spy, valid_input).await;
         assert_eq!(
@@ -188,7 +188,7 @@ mod tests {
         interactor.set_authorizer(authorizer);
         let error = interactor
             .execute(
-                &AuthPayloadSpy::new_allowed("ALLOWED_ID".to_string()),
+                &AuthPayloadSpy::new_allowed("ALLOWED_ID".into()),
                 valid_input(),
             )
             .await
@@ -204,7 +204,7 @@ mod tests {
             ..
         } = create_interactor();
 
-        let payload_spy = &AuthPayloadSpy::new_allowed("ALLOWED_ID".to_string());
+        let payload_spy = &AuthPayloadSpy::new_allowed("ALLOWED_ID".into());
         interactor.execute(payload_spy, valid_input()).await;
         assert_eq!(
             *resolver.payload_ids.lock().unwrap(),
@@ -219,12 +219,12 @@ mod tests {
 
         interactor
             .execute(
-                &AuthPayloadSpy::new_allowed("ALLOWED_ID".to_string()),
+                &AuthPayloadSpy::new_allowed("ALLOWED_ID".into()),
                 valid_input(),
             )
             .await;
 
-        crypto.assert_hash_calls(vec![(valid_input().new_password.to_string())]);
+        crypto.assert_hash_calls(vec![(valid_input().new_password.into())]);
     }
     #[tokio::test]
     async fn should_store_password_in_repository() {
@@ -237,7 +237,7 @@ mod tests {
 
         interactor
             .execute(
-                &AuthPayloadSpy::new_allowed("ALLOWED_ID".to_string()),
+                &AuthPayloadSpy::new_allowed("ALLOWED_ID".into()),
                 valid_input(),
             )
             .await

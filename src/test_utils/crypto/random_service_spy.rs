@@ -14,12 +14,12 @@ pub const RANDOM_ID: &str = "random id";
 impl RandomService for RandomServiceSpy {
     async fn secure_random_password(&self) -> UnknownResult<String> {
         *self.secure_random_called.lock().unwrap() = true;
-        Ok(SECURE_RANDOM_PASSWORD.to_string())
+        Ok(SECURE_RANDOM_PASSWORD.into())
     }
 
     async fn random_id(&self) -> UnknownResult<String> {
         *self.random_id_called.lock().unwrap() = true;
-        Ok(RANDOM_ID.to_string())
+        Ok(RANDOM_ID.into())
     }
 }
 

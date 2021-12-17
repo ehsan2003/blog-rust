@@ -14,7 +14,7 @@ impl Authorizer for AuthorizerSpy {
         self.calls
             .lock()
             .unwrap()
-            .push((user.clone(), password.to_string()));
+            .push((user.clone(), password.into()));
         Ok(self.is_authorized)
     }
 }

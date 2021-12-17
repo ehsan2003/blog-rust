@@ -68,7 +68,7 @@ impl ChangeMyPasswordInteractor {
             .await?
         {
             return Err(ApplicationException::ForBiddenException(
-                "Old password is wrong".to_string(),
+                "Old password is wrong".into(),
             ));
         }
         let password = self.crypto.hash(&input.new_password).await?;
@@ -104,10 +104,10 @@ mod tests {
     fn create_interactor() -> CreationResult {
         let repo = Arc::new(FakeUsersRepository::new_with_data(vec![User {
             id: auth().get_user_id(),
-            email: "".to_string(),
+            email: "".into(),
             password: valid_input().old_password,
             role: Box::from(RoleSpy::new_allowed()),
-            name: "".to_string(),
+            name: "".into(),
         }]));
         let crypto = Arc::new(CryptoServiceSpy::new_verified());
         let authorizer = Arc::new(AuthorizerSpy::new_authorized());
@@ -136,10 +136,10 @@ mod tests {
     fn resolved_user() -> User {
         User {
             id: auth().get_user_id(),
-            email: "".to_string(),
-            password: "".to_string(),
+            email: "".into(),
+            password: "".into(),
             role: Box::from(RoleSpy::new_allowed()),
-            name: "".to_string(),
+            name: "".into(),
         }
     }
 
@@ -181,7 +181,7 @@ mod tests {
 
         i.execute(&auth(), valid_input()).await.unwrap();
 
-        c.assert_hash_calls(vec![valid_input().new_password.to_string()]);
+        c.assert_hash_calls(vec![valid_input().new_password.into()]);
     }
     #[tokio::test]
     async fn should_store_the_hashed_password_in_repository() {
@@ -197,11 +197,11 @@ mod tests {
     }
     fn valid_input() -> ChangeMyPasswordInput {
         ChangeMyPasswordInput {
-            old_password: "old_password".to_string(),
-            new_password: "new_password".to_string(),
+            old_password: "old_password".into(),
+            new_password: "new_password".into(),
         }
     }
     fn auth() -> AuthPayloadSpy {
-        AuthPayloadSpy::new_allowed("ALLOWED_ID".to_string())
+        AuthPayloadSpy::new_allowed("ALLOWED_ID".into())
     }
 }

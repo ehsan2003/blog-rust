@@ -38,18 +38,15 @@ impl CryptoServiceSpy {
 #[async_trait::async_trait]
 impl CryptoService for CryptoServiceSpy {
     async fn hash(&self, _data: &str) -> UnknownResult<String> {
-        self.hash_called_with
-            .lock()
-            .unwrap()
-            .push(_data.to_string());
-        Ok(HASH_RESULT.to_string())
+        self.hash_called_with.lock().unwrap().push(_data.into());
+        Ok(HASH_RESULT.into())
     }
 
     async fn verify(&self, _data: &str, _hash: &str) -> UnknownResult<bool> {
         self.verify_called_with
             .lock()
             .unwrap()
-            .push((_data.to_string(), _hash.to_string()));
+            .push((_data.into(), _hash.into()));
         Ok(self.verify_result)
     }
 }

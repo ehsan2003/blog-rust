@@ -46,7 +46,7 @@ impl LoginInteractor {
         let user = match self.repo.get_by_email(&input.email).await? {
             None => {
                 return Err(ApplicationException::BadRequestException(
-                    "invalid credentials".to_string(),
+                    "invalid credentials".into(),
                 ))
             }
             Some(user) => user,
@@ -54,11 +54,11 @@ impl LoginInteractor {
         let is_correct = self.authorizer.authorize(&user, &input.password).await?;
         if !is_correct {
             return Err(ApplicationException::BadRequestException(
-                "invalid credentials".to_string(),
+                "invalid credentials".into(),
             ));
         }
         Ok(LoginOutput {
-            user_id: user.id.to_string(),
+            user_id: user.id.into(),
             role: self.role_namer.name_role(user.role).unwrap(),
         })
     }
@@ -83,11 +83,11 @@ mod tests {
     }
     fn initial_user() -> User {
         User {
-            id: "1".to_string(),
-            email: "a@email.com".to_string(),
-            password: "password".to_string(),
+            id: "1".into(),
+            email: "a@email.com".into(),
+            password: "password".into(),
             role: Box::from(RoleSpy::new_allowed()),
-            name: "name".to_string(),
+            name: "name".into(),
         }
     }
     fn valid_input() -> LoginInput {
@@ -100,7 +100,7 @@ mod tests {
     fn create_interactor() -> CreationResult {
         let repo = Arc::new(FakeUsersRepository::new_with_data(vec![initial_user()]));
         let authorizer = Arc::new(AuthorizerSpy::new_authorized());
-        let role_namer = Arc::new(RoleNamerSpy::new_returning("named_role".to_string()));
+        let role_namer = Arc::new(RoleNamerSpy::new_returning("named_role".into()));
 
         let repo_clone = repo.clone();
         let authorizer_clone = authorizer.clone();
@@ -121,8 +121,8 @@ mod tests {
         let CreationResult { interactor, .. } = create_interactor();
 
         let input = LoginInput {
-            email: "not_found@email.com".to_string(),
-            password: "password".to_string(),
+            email: "not_found@email.com".into(),
+            password: "password".into(),
         };
         let err = interactor.execute(input).await.unwrap_err();
         assert_bad_request_error(err);
@@ -133,8 +133,8 @@ mod tests {
         let CreationResult { mut interactor, .. } = create_interactor();
         interactor.set_authorizer(Arc::new(AuthorizerSpy::new_unauthorized()));
         let input = LoginInput {
-            email: "a@email.com".to_string(),
-            password: "wrong_password".to_string(),
+            email: "a@email.com".into(),
+            password: "wrong_password".into(),
         };
         let err = interactor.execute(input).await.unwrap_err();
         assert_bad_request_error(err);
@@ -158,7 +158,7 @@ mod tests {
     async fn should_return_user_id_and_role_name() {
         let CreationResult { mut interactor, .. } = create_interactor();
         let input = valid_input();
-        interactor.set_role_namer(Arc::new(RoleNamerSpy::new_returning("role".to_string())));
+        interactor.set_role_namer(Arc::new(RoleNamerSpy::new_returning("role".into())));
         let output = interactor.execute(input).await.unwrap();
         let initial_user = initial_user();
         assert_eq!(output.user_id, initial_user.id);

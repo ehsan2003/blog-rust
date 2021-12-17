@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use crate::access_management::RoleFactory;
-use crate::errors::{ApplicationException, ApplicationResult};
 use crate::errors::validation::ValidationError;
+use crate::errors::{ApplicationException, ApplicationResult};
 use crate::users::domain::User;
 use crate::users::interactors::actions::CREATE_USER_ACTION;
 use crate::users::interactors::traits::UsersRepository;
-use crate::utils::{CryptoService, RandomService, Validatable};
 use crate::utils::AuthPayload;
+use crate::utils::{CryptoService, RandomService, Validatable};
 
 pub struct CreateUserInteractor {
     random_service: Arc<dyn RandomService>,
@@ -60,7 +60,7 @@ impl CreateUserInteractor {
     async fn check_email_or_fail(&self, input: &CreateUserInput) -> ApplicationResult<()> {
         if self.repo.email_exists(&input.email).await? {
             return Err(ApplicationException::DuplicationException {
-                key: "email".to_string(),
+                key: "email".into(),
                 value: input.email.clone(),
             });
         }
@@ -79,31 +79,31 @@ impl Validatable for CreateUserInput {
     fn validate(&self) -> Result<(), ValidationError> {
         if self.role.is_empty() {
             return Err(ValidationError::new(
-                "role".to_string(),
+                "role".into(),
                 self.role.clone(),
-                "role is required".to_string(),
+                "role is required".into(),
             ));
         }
         if self.email.is_empty() {
             return Err(ValidationError::new(
-                "email".to_string(),
+                "email".into(),
                 self.email.clone(),
-                "email is required".to_string(),
+                "email is required".into(),
             ));
         }
         if !validator::validate_email(&self.email) {
             println!("{}", self.email);
             return Err(ValidationError::new(
-                "email".to_string(),
+                "email".into(),
                 self.email.clone(),
-                "email is invalid".to_string(),
+                "email is invalid".into(),
             ));
         }
         if self.name.is_empty() {
             return Err(ValidationError::new(
-                "name".to_string(),
+                "name".into(),
                 self.name.clone(),
-                "name is required".to_string(),
+                "name is required".into(),
             ));
         }
 
@@ -125,7 +125,7 @@ impl CreateUserInteractor {
     ) -> ApplicationResult<CreateUserOutput> {
         self.validate_or_fail(&input)?;
         if !auth.can(CREATE_USER_ACTION) {
-            return Err(ApplicationException::ForBiddenException("".to_string()));
+            return Err(ApplicationException::ForBiddenException("".into()));
         }
         self.check_email_or_fail(&input).await?;
         let random_password = self.random_service.secure_random_password().await?;
@@ -158,7 +158,7 @@ mod tests {
     use crate::test_utils::access_management::role_spy::RoleSpy;
     use crate::test_utils::crypto::crypto_service_spy::{CryptoServiceSpy, HASH_RESULT};
     use crate::test_utils::crypto::random_service_spy::{
-        RANDOM_ID, RandomServiceSpy, SECURE_RANDOM_PASSWORD,
+        RandomServiceSpy, RANDOM_ID, SECURE_RANDOM_PASSWORD,
     };
     use crate::test_utils::errors_assertion::{
         assert_duplication_error, assert_forbidden_error, assert_validation_error,
@@ -305,7 +305,7 @@ mod tests {
     #[tokio::test]
     async fn should_return_forbidden_error_when_the_auth_payload_is_not_allowed_to_create_user() {
         let CreationResult { interactor: i, .. } = create_interactor();
-        let spy = AuthPayloadSpy::new_disallowed("WEAK".to_string());
+        let spy = AuthPayloadSpy::new_disallowed("WEAK".into());
 
         let result = i.execute(valid_input(), &spy).await.unwrap_err();
         let spy_called_with = spy.get_called()[0].clone();
@@ -317,7 +317,7 @@ mod tests {
         use crate::users::interactors::create_user::CreateUserInput;
 
         pub fn auth() -> AuthPayloadSpy {
-            AuthPayloadSpy::new_allowed("ALLOWED_ID".to_string())
+            AuthPayloadSpy::new_allowed("ALLOWED_ID".into())
         }
 
         pub fn valid_input() -> CreateUserInput {

@@ -22,7 +22,7 @@ impl Clone for AuthPayloadSpy {
 }
 impl Role for AuthPayloadSpy {
     fn can(&self, action: &str) -> bool {
-        self.called_with.lock().unwrap().push(action.to_string());
+        self.called_with.lock().unwrap().push(action.into());
         self.can
     }
 }
