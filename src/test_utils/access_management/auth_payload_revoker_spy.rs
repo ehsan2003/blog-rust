@@ -1,15 +1,15 @@
 use std::sync::Mutex;
 
 use crate::errors::UnknownResult;
-use crate::utils::{AuthPayload, AuthPayloadRevoker};
+use crate::utils::{AuthPayload, AuthRevoker};
 
-pub struct AuthPayloadRevokerSpy {
+pub struct AuthRevokerSpy {
     pub payload_ids: Mutex<Vec<String>>,
     pub revoked_ids: Mutex<Vec<String>>,
 }
 
 #[async_trait::async_trait]
-impl AuthPayloadRevoker for AuthPayloadRevokerSpy {
+impl AuthRevoker for AuthRevokerSpy {
     async fn revoke_auth_payload(&self, auth_payload: &(dyn AuthPayload)) -> UnknownResult<()> {
         self.payload_ids
             .lock()
@@ -24,7 +24,13 @@ impl AuthPayloadRevoker for AuthPayloadRevokerSpy {
     }
 }
 
-impl AuthPayloadRevokerSpy {
+impl AuthRevokerSpy {
+    pub fn new() -> Self {
+        Self {
+            payload_ids: Mutex::new(Vec::new()),
+            revoked_ids: Mutex::new(Vec::new()),
+        }
+    }
     pub fn get_payload_ids(&self) -> Vec<String> {
         self.payload_ids.lock().unwrap().clone()
     }

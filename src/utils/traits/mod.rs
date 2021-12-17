@@ -1,6 +1,6 @@
 pub use auth_payload::AuthPayload;
 pub use auth_payload_resolver::AuthPayloadResolver;
-pub use auth_payload_revoker::AuthPayloadRevoker;
+pub use auth_payload_revoker::AuthRevoker;
 pub use authorizer::Authorizer;
 pub use crypto_service::CryptoService;
 pub use random_service::RandomService;
