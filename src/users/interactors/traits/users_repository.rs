@@ -8,7 +8,7 @@ pub trait UsersRepository: Send + Sync {
     async fn create(&self, user: &User) -> UnknownResult<()>;
     async fn update(&self, user: &User) -> UnknownResult<()>;
     async fn delete(&self, id: &str) -> UnknownResult<()>;
-
+    async fn get_all(&self) -> UnknownResult<Vec<User>>;
     async fn email_exists(&self, email: &str) -> UnknownResult<bool> {
         Ok(self.get_by_email(email).await?.is_some())
     }

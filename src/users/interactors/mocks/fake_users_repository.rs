@@ -52,6 +52,10 @@ impl UsersRepository for FakeUsersRepository {
         }
         Ok(())
     }
+
+    async fn get_all(&self) -> UnknownResult<Vec<User>> {
+        Ok(self.users.lock().unwrap().clone())
+    }
 }
 
 impl FakeUsersRepository {
