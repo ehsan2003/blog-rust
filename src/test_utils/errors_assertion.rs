@@ -36,3 +36,10 @@ pub fn assert_bad_request_error(error: ApplicationException) {
         ApplicationException::BadRequestException { .. }
     ));
 }
+
+pub fn assert_not_found_error(error: ApplicationException) {
+    assert!(matches!(
+        error,
+        ApplicationException::NotFoundException { .. }
+    ));
+}

@@ -81,9 +81,9 @@ impl ChangeMyPasswordInteractor {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::access_management::allowed_auth_payload_spy::AllowedAuthPayloadSpy;
-    use crate::test_utils::access_management::allowed_role::AllowedRole;
     use crate::test_utils::access_management::auth_payload_resolver_spy::AuthPayloadResolverSpy;
+    use crate::test_utils::access_management::auth_payload_spy::AuthPayloadSpy;
+    use crate::test_utils::access_management::role_spy::RoleSpy;
     use crate::test_utils::crypto::authorizer_spy::AuthorizerSpy;
     use crate::test_utils::crypto::crypto_service_spy::{CryptoServiceSpy, HASH_RESULT};
     use crate::test_utils::errors_assertion::{
@@ -106,7 +106,7 @@ mod tests {
             id: auth().get_user_id(),
             email: "".to_string(),
             password: valid_input().old_password,
-            role: Box::from(AllowedRole),
+            role: Box::from(RoleSpy::new_allowed()),
             name: "".to_string(),
         }]));
         let crypto = Arc::new(CryptoServiceSpy::new_verified());
@@ -138,7 +138,7 @@ mod tests {
             id: auth().get_user_id(),
             email: "".to_string(),
             password: "".to_string(),
-            role: Box::from(AllowedRole),
+            role: Box::from(RoleSpy::new_allowed()),
             name: "".to_string(),
         }
     }
@@ -203,7 +203,7 @@ mod tests {
             new_password: "new_password".to_string(),
         }
     }
-    fn auth() -> AllowedAuthPayloadSpy {
-        AllowedAuthPayloadSpy::new()
+    fn auth() -> AuthPayloadSpy {
+        AuthPayloadSpy::new_allowed("ALLOWED_ID".to_string())
     }
 }

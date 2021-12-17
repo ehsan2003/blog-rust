@@ -68,8 +68,8 @@ impl LoginInteractor {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::access_management::allowed_role::AllowedRole;
-    use crate::test_utils::access_management::role_namer_mock::RoleNamerSpy;
+    use crate::test_utils::access_management::role_namer_spy::RoleNamerSpy;
+    use crate::test_utils::access_management::role_spy::RoleSpy;
     use crate::test_utils::crypto::authorizer_spy::AuthorizerSpy;
     use crate::test_utils::errors_assertion::assert_bad_request_error;
     use crate::users::domain::User;
@@ -88,7 +88,7 @@ mod tests {
             id: "1".to_string(),
             email: "a@email.com".to_string(),
             password: "password".to_string(),
-            role: Box::from(AllowedRole),
+            role: Box::from(RoleSpy::new_allowed()),
             name: "name".to_string(),
         }
     }

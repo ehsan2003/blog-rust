@@ -153,10 +153,9 @@ impl CreateUserInteractor {
 mod tests {
     use utils::*;
 
-    use crate::test_utils::access_management::allowed_role::AllowedRole;
-    use crate::test_utils::access_management::allowed_role_role_factory_spy::AllowedRoleRoleFactorySpy;
-    use crate::test_utils::access_management::disallowed_auth_payload_spy::DisallowedAuthPayloadSpy;
-    use crate::test_utils::access_management::unknown_role_role_factory_spy::UnknownRoleRoleFactorySpy;
+    use crate::test_utils::access_management::auth_payload_spy::AuthPayloadSpy;
+    use crate::test_utils::access_management::role_factory_spy::RoleFactorySpy;
+    use crate::test_utils::access_management::role_spy::RoleSpy;
     use crate::test_utils::crypto::crypto_service_spy::{CryptoServiceSpy, HASH_RESULT};
     use crate::test_utils::crypto::random_service_spy::{
         RandomServiceSpy, RANDOM_ID, SECURE_RANDOM_PASSWORD,
@@ -173,14 +172,14 @@ mod tests {
     fn create_interactor() -> (
         CreateUserInteractor,
         Arc<FakeUsersRepository>,
-        Arc<AllowedRoleRoleFactorySpy>,
+        Arc<RoleFactorySpy>,
         Arc<CryptoServiceSpy>,
         Arc<RandomServiceSpy>,
     ) {
         let random_service = Arc::new(RandomServiceSpy::new());
         let crypto_service = Arc::new(CryptoServiceSpy::new_verified());
         let repo = Arc::new(FakeUsersRepository::new_empty());
-        let role_factory = Arc::new(AllowedRoleRoleFactorySpy::new());
+        let role_factory = Arc::new(RoleFactorySpy::new(Some(Box::from(RoleSpy::new_allowed()))));
 
         let arc_cloned_random_service = Arc::clone(&random_service);
         let arc_cloned_crypto_service = Arc::clone(&crypto_service);
@@ -220,7 +219,7 @@ mod tests {
     #[tokio::test]
     async fn should_throw_validation_error_when_the_role_is_unknown_for_the_role_factory() {
         let (mut i, ..) = create_interactor();
-        i.set_role_factory(Arc::new(UnknownRoleRoleFactorySpy::new()));
+        i.set_role_factory(Arc::new(RoleFactorySpy::new(None)));
         let error = i.execute(valid_input(), &auth()).await.unwrap_err();
         assert_validation_error_with_key(error, "role");
     }
@@ -232,7 +231,7 @@ mod tests {
         let valid_input = valid_input();
 
         i.execute(valid_input.clone(), &auth()).await.unwrap();
-        let called_with = spy.called_with.lock().unwrap();
+        let called_with = spy.get_create_role_calls();
         assert_eq!(*called_with, vec![valid_input.role.clone()]);
     }
     #[tokio::test]
@@ -257,7 +256,7 @@ mod tests {
         i.set_repo(Arc::new(FakeUsersRepository::new_with_data(vec![User {
             email: input.email,
             name: input.name,
-            role: Box::from(AllowedRole {}),
+            role: Box::from(RoleSpy::new_allowed()),
             password: "exists".to_owned(),
             id: "id".to_owned(),
         }])));
@@ -291,20 +290,20 @@ mod tests {
     #[tokio::test]
     async fn should_return_forbidden_error_when_the_auth_payload_is_not_allowed_to_create_user() {
         let (i, ..) = create_interactor();
-        let spy = DisallowedAuthPayloadSpy::new();
+        let spy = AuthPayloadSpy::new_disallowed("WEAK".to_string());
 
         let result = i.execute(valid_input(), &spy).await.unwrap_err();
-        let spy_called_with = spy.called_with.lock().unwrap()[0].clone();
+        let spy_called_with = spy.get_called()[0].clone();
         assert_eq!(spy_called_with, CREATE_USER_ACTION);
         assert_forbidden_error(result);
     }
     mod utils {
         use crate::errors::ApplicationException;
-        use crate::test_utils::access_management::allowed_auth_payload_spy::AllowedAuthPayloadSpy;
+        use crate::test_utils::access_management::auth_payload_spy::AuthPayloadSpy;
         use crate::users::interactors::create_user::CreateUserInput;
 
-        pub fn auth() -> AllowedAuthPayloadSpy {
-            AllowedAuthPayloadSpy::new()
+        pub fn auth() -> AuthPayloadSpy {
+            AuthPayloadSpy::new_allowed("ALLOWED_ID".to_string())
         }
 
         pub fn valid_input() -> CreateUserInput {
