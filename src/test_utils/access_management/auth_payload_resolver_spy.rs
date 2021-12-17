@@ -1,7 +1,5 @@
 use std::sync::Mutex;
 
-use dyn_clone::DynClone;
-
 use crate::errors::UnknownResult;
 use crate::users::domain::User;
 use crate::utils::{AuthPayload, AuthPayloadResolver};

@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use crate::errors::validation::ValidationError;
 use crate::errors::{ApplicationException, ApplicationResult};
+use crate::errors::validation::ValidationError;
 use crate::users::interactors::traits::UsersRepository;
-use crate::utils::{AuthPayload, AuthPayloadResolver, Authorizer, CryptoService, Validatable};
+use crate::utils::{Authorizer, AuthPayload, AuthPayloadResolver, CryptoService, Validatable};
 
 pub struct ChangeMyPasswordInput {
     pub old_password: String,
@@ -146,7 +146,7 @@ mod tests {
     #[tokio::test]
     async fn should_return_validation_exception_if_the_new_password_is_not_valid() {
         let CreationResult {
-            interactor: mut i, ..
+            interactor: i, ..
         } = create_interactor();
 
         let invalid = ChangeMyPasswordInput {

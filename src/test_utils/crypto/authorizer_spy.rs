@@ -1,4 +1,4 @@
-use std::sync::{Mutex, MutexGuard};
+use std::sync::Mutex;
 
 use crate::errors::UnknownResult;
 use crate::users::domain::User;

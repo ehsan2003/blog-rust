@@ -65,4 +65,7 @@ impl FakeUsersRepository {
             users: Mutex::new(users),
         }
     }
+    pub fn get_users(&self) -> Vec<User> {
+        self.users.lock().unwrap().clone()
+    }
 }

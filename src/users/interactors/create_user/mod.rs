@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use crate::access_management::RoleFactory;
-use crate::errors::validation::ValidationError;
 use crate::errors::{ApplicationException, ApplicationResult};
+use crate::errors::validation::ValidationError;
 use crate::users::domain::User;
 use crate::users::interactors::actions::CREATE_USER_ACTION;
 use crate::users::interactors::traits::UsersRepository;
+use crate::utils::{CryptoService, RandomService, Validatable};
 use crate::utils::AuthPayload;
-use crate::utils::{CryptoService, Interactor, RandomService, Validatable};
 
 pub struct CreateUserInteractor {
     random_service: Arc<dyn RandomService>,
@@ -158,7 +158,7 @@ mod tests {
     use crate::test_utils::access_management::role_spy::RoleSpy;
     use crate::test_utils::crypto::crypto_service_spy::{CryptoServiceSpy, HASH_RESULT};
     use crate::test_utils::crypto::random_service_spy::{
-        RandomServiceSpy, RANDOM_ID, SECURE_RANDOM_PASSWORD,
+        RANDOM_ID, RandomServiceSpy, SECURE_RANDOM_PASSWORD,
     };
     use crate::test_utils::errors_assertion::{
         assert_duplication_error, assert_forbidden_error, assert_validation_error,
@@ -169,13 +169,14 @@ mod tests {
 
     use super::*;
 
-    fn create_interactor() -> (
-        CreateUserInteractor,
-        Arc<FakeUsersRepository>,
-        Arc<RoleFactorySpy>,
-        Arc<CryptoServiceSpy>,
-        Arc<RandomServiceSpy>,
-    ) {
+    struct CreationResult {
+        interactor: CreateUserInteractor,
+        repo: Arc<FakeUsersRepository>,
+        role_factory: Arc<RoleFactorySpy>,
+        crypto_service: Arc<CryptoServiceSpy>,
+        random_service: Arc<RandomServiceSpy>,
+    }
+    fn create_interactor() -> CreationResult {
         let random_service = Arc::new(RandomServiceSpy::new());
         let crypto_service = Arc::new(CryptoServiceSpy::new_verified());
         let repo = Arc::new(FakeUsersRepository::new_empty());
@@ -193,18 +194,18 @@ mod tests {
             arc_cloned_role_factory,
         );
 
-        (
+        CreationResult {
             interactor,
             repo,
             role_factory,
             crypto_service,
             random_service,
-        )
+        }
     }
 
     #[tokio::test]
     async fn should_throw_validation_error_when_data_is_invalid() {
-        let (i, ..) = create_interactor();
+        let CreationResult { interactor: i, .. } = create_interactor();
         let inputs = vec![CreateUserInput {
             role: "test".to_owned(),
             name: "pest".to_owned(),
@@ -218,7 +219,9 @@ mod tests {
 
     #[tokio::test]
     async fn should_throw_validation_error_when_the_role_is_unknown_for_the_role_factory() {
-        let (mut i, ..) = create_interactor();
+        let CreationResult {
+            interactor: mut i, ..
+        } = create_interactor();
         i.set_role_factory(Arc::new(RoleFactorySpy::new(None)));
         let error = i.execute(valid_input(), &auth()).await.unwrap_err();
         assert_validation_error_with_key(error, "role");
@@ -226,7 +229,11 @@ mod tests {
 
     #[tokio::test]
     async fn should_call_role_factory_with_passed_role() {
-        let (i, _, spy, ..) = create_interactor();
+        let CreationResult {
+            interactor: i,
+            role_factory: spy,
+            ..
+        } = create_interactor();
 
         let valid_input = valid_input();
 
@@ -236,7 +243,11 @@ mod tests {
     }
     #[tokio::test]
     async fn should_call_generate_random_password() {
-        let (i, _, _, _, spy) = create_interactor();
+        let CreationResult {
+            interactor: i,
+            random_service: spy,
+            ..
+        } = create_interactor();
         let valid_input = valid_input();
         i.execute(valid_input.clone(), &auth()).await.unwrap();
 
@@ -244,13 +255,19 @@ mod tests {
     }
     #[tokio::test]
     async fn should_hash_generated_password() {
-        let (i, _, _, crypto_service, _) = create_interactor();
+        let CreationResult {
+            interactor: i,
+            crypto_service,
+            ..
+        } = create_interactor();
         i.execute(valid_input(), &auth()).await.unwrap();
         crypto_service.assert_hash_calls(vec![SECURE_RANDOM_PASSWORD.to_owned()]);
     }
     #[tokio::test]
     async fn should_throw_duplication_exception_when_email_already_exists() {
-        let (mut i, _, _, _, _) = create_interactor();
+        let CreationResult {
+            interactor: mut i, ..
+        } = create_interactor();
         let input = valid_input();
 
         i.set_repo(Arc::new(FakeUsersRepository::new_with_data(vec![User {
@@ -266,16 +283,14 @@ mod tests {
     }
     #[tokio::test]
     async fn should_store_a_user_in_repo_which_contains_correct_fields() {
-        let (i, repo, _, _, _) = create_interactor();
+        let CreationResult {
+            interactor: i,
+            repo,
+            ..
+        } = create_interactor();
         let input = valid_input();
         i.execute(input.clone(), &auth()).await.unwrap();
-        let stored_user = repo
-            .users
-            .lock()
-            .unwrap()
-            .get(0)
-            .expect("should have a user")
-            .clone();
+        let stored_user = repo.get_users().get(0).expect("should have a user").clone();
         assert_eq!(stored_user.email, input.email);
         assert_eq!(stored_user.name, input.name);
         assert_eq!(stored_user.password, HASH_RESULT);
@@ -283,13 +298,13 @@ mod tests {
     }
     #[tokio::test]
     async fn should_return_random_password_on_result() {
-        let (i, _, _, _, _) = create_interactor();
+        let CreationResult { interactor: i, .. } = create_interactor();
         let result = i.execute(valid_input(), &auth()).await.unwrap();
         assert_eq!(result.password, SECURE_RANDOM_PASSWORD);
     }
     #[tokio::test]
     async fn should_return_forbidden_error_when_the_auth_payload_is_not_allowed_to_create_user() {
-        let (i, ..) = create_interactor();
+        let CreationResult { interactor: i, .. } = create_interactor();
         let spy = AuthPayloadSpy::new_disallowed("WEAK".to_string());
 
         let result = i.execute(valid_input(), &spy).await.unwrap_err();
@@ -298,7 +313,6 @@ mod tests {
         assert_forbidden_error(result);
     }
     mod utils {
-        use crate::errors::ApplicationException;
         use crate::test_utils::access_management::auth_payload_spy::AuthPayloadSpy;
         use crate::users::interactors::create_user::CreateUserInput;
 

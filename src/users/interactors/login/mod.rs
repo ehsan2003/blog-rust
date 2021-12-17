@@ -2,8 +2,6 @@ use std::sync::Arc;
 
 use crate::access_management::RoleNamer;
 use crate::errors::{ApplicationException, ApplicationResult};
-use crate::users::domain::User;
-use crate::users::interactors::create_user::{CreateUserInput, CreateUserOutput};
 use crate::users::interactors::traits::UsersRepository;
 use crate::utils::Authorizer;
 

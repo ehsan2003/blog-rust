@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::errors::{ApplicationException, ApplicationResult};
 use crate::users::interactors::actions::CHANGE_OTHERS_PASSWORD_ACTION;
 use crate::users::interactors::traits::UsersRepository;
-use crate::utils::{AuthPayload, AuthPayloadResolver, Authorizer, CryptoService};
+use crate::utils::{Authorizer, AuthPayload, AuthPayloadResolver, CryptoService};
 
 pub struct ChangeUsersPasswordInteractor {
     repo: Arc<dyn UsersRepository>,
@@ -193,7 +193,7 @@ mod tests {
     #[tokio::test]
     async fn should_resolve_auth_payload() {
         let CreationResult {
-            mut interactor,
+            interactor,
             resolver,
             ..
         } = create_interactor();
