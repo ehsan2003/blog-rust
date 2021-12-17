@@ -5,7 +5,7 @@ use crate::users::domain::User;
 use crate::users::interactors::traits::UsersRepository;
 
 pub struct FakeUsersRepository {
-    pub users: Mutex<Vec<User>>,
+    users: Mutex<Vec<User>>,
 }
 
 #[async_trait::async_trait]
