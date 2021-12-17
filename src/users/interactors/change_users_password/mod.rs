@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
+use ApplicationException::*;
+
 use crate::errors::{ApplicationException, ApplicationResult};
-use crate::users::domain::User;
 use crate::users::interactors::actions::CHANGE_OTHERS_PASSWORD_ACTION;
 use crate::users::interactors::traits::UsersRepository;
 use crate::utils::{AuthPayload, AuthPayloadResolver, Authorizer, CryptoService};
@@ -12,7 +13,7 @@ pub struct ChangeUsersPasswordInteractor {
     crypto: Arc<dyn CryptoService>,
     auth_resolver: Arc<dyn AuthPayloadResolver>,
 }
-
+#[allow(unused)]
 impl ChangeUsersPasswordInteractor {
     pub fn new(
         repo: Arc<dyn UsersRepository>,
@@ -52,7 +53,7 @@ impl ChangeUsersPasswordInteractor {
         input: ChangeUsersPasswordInput,
     ) -> ApplicationResult<()> {
         if !auth.can(CHANGE_OTHERS_PASSWORD_ACTION) {
-            return Err(ApplicationException::ForBiddenException("".into()));
+            return Err(ForBiddenException("".into()));
         }
         let modifier_user = self.auth_resolver.resolve(auth).await?;
         if !self
@@ -60,11 +61,11 @@ impl ChangeUsersPasswordInteractor {
             .authorize(&modifier_user, &input.password)
             .await?
         {
-            return Err(ApplicationException::ForBiddenException("".into()));
+            return Err(ForBiddenException("".into()));
         }
 
         let mut user = match self.repo.get_by_id(&input.user_id).await? {
-            None => return Err(ApplicationException::NotFoundException("".into())),
+            None => return Err(NotFoundException("".into())),
             Some(user) => user,
         };
         user.password = self.crypto.hash(&input.new_password).await?;
@@ -174,7 +175,7 @@ mod tests {
         let CreationResult { interactor, .. } = create_interactor();
         let payload_spy = AuthPayloadSpy::new_allowed("ALLOWED_ID".into());
         let valid_input = valid_input();
-        interactor.execute(&payload_spy, valid_input).await;
+        interactor.execute(&payload_spy, valid_input).await.unwrap();
         assert_eq!(
             payload_spy.get_called(),
             vec![CHANGE_OTHERS_PASSWORD_ACTION]
@@ -205,7 +206,10 @@ mod tests {
         } = create_interactor();
 
         let payload_spy = &AuthPayloadSpy::new_allowed("ALLOWED_ID".into());
-        interactor.execute(payload_spy, valid_input()).await;
+        interactor
+            .execute(payload_spy, valid_input())
+            .await
+            .unwrap();
         assert_eq!(
             *resolver.payload_ids.lock().unwrap(),
             vec![payload_spy.get_user_id()]
@@ -222,17 +226,15 @@ mod tests {
                 &AuthPayloadSpy::new_allowed("ALLOWED_ID".into()),
                 valid_input(),
             )
-            .await;
+            .await
+            .unwrap();
 
         crypto.assert_hash_calls(vec![(valid_input().new_password.into())]);
     }
     #[tokio::test]
     async fn should_store_password_in_repository() {
         let CreationResult {
-            interactor,
-            repo,
-            crypto,
-            ..
+            interactor, repo, ..
         } = create_interactor();
 
         interactor

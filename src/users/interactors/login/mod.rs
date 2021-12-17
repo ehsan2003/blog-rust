@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use ApplicationException::*;
+
 use crate::access_management::RoleNamer;
 use crate::errors::{ApplicationException, ApplicationResult};
 use crate::users::interactors::traits::UsersRepository;
@@ -20,6 +22,7 @@ pub struct LoginOutput {
     user_id: String,
     role: String,
 }
+#[allow(unused)]
 impl LoginInteractor {
     pub fn new(
         repo: Arc<dyn UsersRepository>,
@@ -44,18 +47,12 @@ impl LoginInteractor {
 
     pub async fn execute(&self, input: LoginInput) -> ApplicationResult<LoginOutput> {
         let user = match self.repo.get_by_email(&input.email).await? {
-            None => {
-                return Err(ApplicationException::BadRequestException(
-                    "invalid credentials".into(),
-                ))
-            }
+            None => return Err(BadRequestException("invalid credentials".into())),
             Some(user) => user,
         };
         let is_correct = self.authorizer.authorize(&user, &input.password).await?;
         if !is_correct {
-            return Err(ApplicationException::BadRequestException(
-                "invalid credentials".into(),
-            ));
+            return Err(BadRequestException("invalid credentials".into()));
         }
         Ok(LoginOutput {
             user_id: user.id.into(),
@@ -75,6 +72,7 @@ mod tests {
 
     use super::*;
 
+    #[allow(unused)]
     struct CreationResult {
         interactor: LoginInteractor,
         repo: Arc<FakeUsersRepository>,

@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use ApplicationException::*;
+
 use crate::access_management::RoleFactory;
 use crate::errors::validation::ValidationError;
 use crate::errors::{ApplicationException, ApplicationResult};
@@ -16,7 +18,7 @@ pub struct CreateUserInteractor {
     role_factory: Arc<dyn RoleFactory>,
 }
 
-// dependencies
+#[allow(unused)]
 impl CreateUserInteractor {
     pub fn new(
         random_service: Arc<dyn RandomService>,
@@ -43,12 +45,45 @@ impl CreateUserInteractor {
     pub fn set_role_factory(&mut self, r: Arc<dyn RoleFactory>) {
         self.role_factory = r;
     }
+}
+
+impl CreateUserInteractor {
+    async fn execute(
+        &self,
+        input: CreateUserInput,
+        auth: &(dyn AuthPayload),
+    ) -> ApplicationResult<CreateUserOutput> {
+        self.validate_or_fail(&input)?;
+        if !auth.can(CREATE_USER_ACTION) {
+            return Err(ForBiddenException("".into()));
+        }
+
+        self.check_email_or_fail(&input).await?;
+        let random_password = self.random_service.secure_random_password().await?;
+        let password_hash = self.crypto_service.hash(&random_password).await?;
+
+        let role = self.role_factory.create_role(&input.role).unwrap();
+
+        self.repo
+            .create(&User {
+                email: input.email.clone(),
+                name: input.name.clone(),
+                password: password_hash,
+                role,
+                id: self.random_service.random_id().await?,
+            })
+            .await?;
+        Ok(CreateUserOutput {
+            password: random_password,
+            user_id: input.email.clone(),
+        })
+    }
 
     fn validate_or_fail(&self, input: &CreateUserInput) -> ApplicationResult<()> {
         input.validate()?;
 
         if !self.role_factory.is_valid_role_name(&input.role) {
-            return Err(ApplicationException::ValidationException {
+            return Err(ValidationException {
                 key: "role".to_owned(),
                 value: input.role.clone(),
                 message: format!("Role {} not found", input.role),
@@ -59,7 +94,7 @@ impl CreateUserInteractor {
 
     async fn check_email_or_fail(&self, input: &CreateUserInput) -> ApplicationResult<()> {
         if self.repo.email_exists(&input.email).await? {
-            return Err(ApplicationException::DuplicationException {
+            return Err(DuplicationException {
                 key: "email".into(),
                 value: input.email.clone(),
             });
@@ -115,38 +150,6 @@ impl Validatable for CreateUserInput {
 pub struct CreateUserOutput {
     password: String,
     user_id: String,
-}
-
-impl CreateUserInteractor {
-    async fn execute(
-        &self,
-        input: CreateUserInput,
-        auth: &(dyn AuthPayload),
-    ) -> ApplicationResult<CreateUserOutput> {
-        self.validate_or_fail(&input)?;
-        if !auth.can(CREATE_USER_ACTION) {
-            return Err(ApplicationException::ForBiddenException("".into()));
-        }
-        self.check_email_or_fail(&input).await?;
-        let random_password = self.random_service.secure_random_password().await?;
-        let password_hash = self.crypto_service.hash(&random_password).await?;
-
-        let role = self.role_factory.create_role(&input.role).unwrap();
-
-        self.repo
-            .create(&User {
-                email: input.email.clone(),
-                name: input.name.clone(),
-                password: password_hash,
-                role,
-                id: self.random_service.random_id().await?,
-            })
-            .await?;
-        Ok(CreateUserOutput {
-            password: random_password,
-            user_id: input.email.clone(),
-        })
-    }
 }
 
 #[cfg(test)]
