@@ -117,12 +117,16 @@ mod tests {
     #[tokio::test]
     async fn should_throw_error_if_user_does_not_exist() {
         let CreationResult { interactor, .. } = create_interactor();
-
-        let input = LoginInput {
+        let input_with_not_existing_email = LoginInput {
             email: "not_found@email.com".into(),
             password: "password".into(),
         };
-        let err = interactor.execute(input).await.unwrap_err();
+
+        let err = interactor
+            .execute(input_with_not_existing_email)
+            .await
+            .unwrap_err();
+
         assert_bad_request_error(err);
     }
 
@@ -130,11 +134,15 @@ mod tests {
     async fn should_throw_bad_request_if_authorizer_refuses_the_password() {
         let CreationResult { mut interactor, .. } = create_interactor();
         interactor.set_authorizer(Arc::new(AuthorizerSpy::new_unauthorized()));
-        let input = LoginInput {
-            email: "a@email.com".into(),
-            password: "wrong_password".into(),
-        };
-        let err = interactor.execute(input).await.unwrap_err();
+
+        let err = interactor
+            .execute(LoginInput {
+                email: "a@email.com".into(),
+                password: "wrong_password".into(),
+            })
+            .await
+            .unwrap_err();
+
         assert_bad_request_error(err);
     }
     #[tokio::test]
@@ -145,21 +153,21 @@ mod tests {
             ..
         } = create_interactor();
         let input = valid_input();
+
         interactor.execute(input.clone()).await.unwrap();
-        let a = authorizer.get_calls()[0].clone();
-        let user = a.0.clone();
-        let password = a.1.clone();
+
+        let (user, password) = authorizer.get_calls()[0].clone();
         assert_eq!(user.email, input.email);
         assert_eq!(password, input.password);
     }
     #[tokio::test]
     async fn should_return_user_id_and_role_name() {
         let CreationResult { mut interactor, .. } = create_interactor();
-        let input = valid_input();
         interactor.set_role_namer(Arc::new(RoleNamerSpy::new_returning("role".into())));
-        let output = interactor.execute(input).await.unwrap();
-        let initial_user = initial_user();
-        assert_eq!(output.user_id, initial_user.id);
+
+        let output = interactor.execute(valid_input()).await.unwrap();
+
+        assert_eq!(output.user_id, initial_user().id);
         assert_eq!(output.role, "role");
     }
 }

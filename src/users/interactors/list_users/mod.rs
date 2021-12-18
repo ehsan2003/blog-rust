@@ -61,6 +61,8 @@ mod tests {
         role_namer: Arc<RoleNamerSpy>,
     }
 
+    const ROLE_NAME: &'static str = "ROLE";
+
     fn create_interactor() -> CreationResult {
         let repo = Arc::new(FakeUsersRepository::new_with_data(&[
             User {
@@ -78,7 +80,7 @@ mod tests {
                 role: Box::from(RoleSpy::new_allowed()),
             },
         ]));
-        let role_namer = Arc::new(RoleNamerSpy::new_returning("ROLE".into()));
+        let role_namer = Arc::new(RoleNamerSpy::new_returning(ROLE_NAME.into()));
         let interactor = ListUsersInteractor::new(repo.clone(), role_namer.clone());
         CreationResult {
             interactor,
@@ -90,7 +92,9 @@ mod tests {
     async fn should_refuse_to_list_users_if_user_is_not_allowed() {
         let CreationResult { interactor, .. } = create_interactor();
         let auth = AuthPayloadSpy::new_disallowed("ID".into());
+
         let result = interactor.execute(&auth).await.unwrap_err();
+
         assert_forbidden_error(result);
     }
     #[tokio::test]
@@ -100,8 +104,9 @@ mod tests {
             repo,
             role_namer,
         } = create_interactor();
-        let auth = AuthPayloadSpy::new_allowed("ID".into());
-        let _ = interactor.execute(&auth).await.unwrap();
+
+        interactor.execute(&allowed_auth()).await.unwrap();
+
         assert_eq!(
             role_namer.called_with_roles.lock().unwrap().len(),
             repo.get_users().len()
@@ -110,12 +115,10 @@ mod tests {
     #[tokio::test]
     async fn should_return_users_with_role_name() {
         let CreationResult { interactor, .. } = create_interactor();
-        let auth = AuthPayloadSpy::new_allowed("ID".into());
-        let result = interactor.execute(&auth).await.unwrap();
-        let users = result.users;
+        let result_users = interactor.execute(&allowed_auth()).await.unwrap().users;
 
-        for user in users {
-            assert_eq!(user.role, "ROLE");
+        for user in result_users {
+            assert_eq!(user.role, ROLE_NAME);
         }
     }
 
@@ -124,13 +127,15 @@ mod tests {
         let CreationResult {
             interactor, repo, ..
         } = create_interactor();
-        let auth = AuthPayloadSpy::new_allowed("ID".into());
-        let result = interactor.execute(&auth).await.unwrap();
-        let users = result.users;
-        let repo_users = repo.get_users();
+
+        let users = interactor.execute(&allowed_auth()).await.unwrap().users;
 
         for user in users {
             assert!(repo.get_by_id(&user.id).await.unwrap().is_some());
         }
+    }
+
+    fn allowed_auth() -> AuthPayloadSpy {
+        AuthPayloadSpy::new_allowed("ID".into())
     }
 }

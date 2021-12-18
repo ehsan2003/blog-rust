@@ -70,23 +70,25 @@ mod tests {
             name: "name".to_string(),
         }
     }
-
+    const AUTH_ID: &str = "ID";
     #[tokio::test]
     async fn should_pass_payload_to_resolver() {
         let creation_result = create_interactor();
         let interactor = creation_result.interactor;
         let auth_resolver = creation_result.auth_resolver;
-        let auth = AuthPayloadSpy::new_allowed("RETURNING_ID".into());
-        let _ = interactor.execute(&auth).await.unwrap();
-        assert_eq!(*auth_resolver.payload_ids.lock().unwrap(), ["RETURNING_ID"]);
+        interactor.execute(&auth()).await.unwrap();
+        assert_eq!(*auth_resolver.payload_ids.lock().unwrap(), [AUTH_ID]);
+    }
+
+    fn auth() -> AuthPayloadSpy {
+        AuthPayloadSpy::new_allowed(AUTH_ID.into())
     }
 
     #[tokio::test]
     async fn should_return_a_valid_visible_user() {
         let creation_result = create_interactor();
         let interactor = creation_result.interactor;
-        let auth = AuthPayloadSpy::new_allowed("RETURNING_ID".into());
-        let visible_user = interactor.execute(&auth).await.unwrap();
+        let visible_user = interactor.execute(&auth()).await.unwrap();
         assert_eq!(visible_user.id, user().id);
         assert_eq!(visible_user.name, user().name);
     }

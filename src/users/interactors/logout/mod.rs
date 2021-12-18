@@ -45,10 +45,11 @@ mod test {
             revoker,
         } = create_interactor();
 
-        let _ = interactor
+        interactor
             .execute(&AuthPayloadSpy::new_allowed("".into()))
             .await
             .unwrap();
+
         assert!(revoker.get_payload_ids().len() > 0);
     }
 }
