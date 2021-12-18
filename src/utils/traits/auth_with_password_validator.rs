@@ -4,7 +4,7 @@ use crate::errors::{ApplicationException, ApplicationResult, UnknownResult};
 use crate::utils::AuthPayload;
 
 #[async_trait::async_trait]
-pub trait AuthWithPasswordValidator {
+pub trait AuthWithPasswordValidator: Send + Sync {
     async fn validate(&self, auth: &(dyn AuthPayload), password: &str) -> UnknownResult<bool>;
     async fn validate_or_fail(
         &self,

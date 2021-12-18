@@ -5,6 +5,7 @@ use crate::utils::{AuthPayload, AuthWithPasswordValidator};
 
 pub struct AuthWithPasswordValidatorSpy {
     pub called_with: Mutex<Vec<(String, String)>>,
+    pub result: bool,
 }
 #[async_trait::async_trait]
 impl AuthWithPasswordValidator for AuthWithPasswordValidatorSpy {
@@ -13,13 +14,20 @@ impl AuthWithPasswordValidator for AuthWithPasswordValidatorSpy {
             .lock()
             .unwrap()
             .push((auth.get_user_id(), password.to_string()));
-        Ok(true)
+        Ok(self.result)
     }
 }
 
 impl AuthWithPasswordValidatorSpy {
-    pub fn new() -> Self {
+    pub fn new_verified() -> Self {
         Self {
+            result: true,
+            called_with: Mutex::new(Vec::new()),
+        }
+    }
+    pub fn new_unverified() -> Self {
+        Self {
+            result: false,
             called_with: Mutex::new(Vec::new()),
         }
     }

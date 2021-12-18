@@ -5,40 +5,38 @@ use ApplicationException::*;
 use crate::errors::{ApplicationException, ApplicationResult};
 use crate::users::interactors::actions::CHANGE_OTHERS_PASSWORD_ACTION;
 use crate::users::interactors::traits::UsersRepository;
-use crate::utils::{AuthPayload, AuthPayloadResolver, Authorizer, CryptoService};
+use crate::utils::{AuthPayload, AuthWithPasswordValidator, CryptoService};
 
 pub struct ChangeUsersPasswordInteractor {
     repo: Arc<dyn UsersRepository>,
-    authorizer: Arc<dyn Authorizer>,
     crypto: Arc<dyn CryptoService>,
-    auth_resolver: Arc<dyn AuthPayloadResolver>,
+    auth_with_password_validator: Arc<dyn AuthWithPasswordValidator>,
 }
 #[allow(unused)]
 impl ChangeUsersPasswordInteractor {
     pub fn new(
         repo: Arc<dyn UsersRepository>,
-        authorizer: Arc<dyn Authorizer>,
         crypto: Arc<dyn CryptoService>,
-        auth_resolver: Arc<dyn AuthPayloadResolver>,
+        auth_with_password_validator: Arc<dyn AuthWithPasswordValidator>,
     ) -> Self {
         Self {
             repo,
-            authorizer,
             crypto,
-            auth_resolver,
+            auth_with_password_validator,
         }
     }
     pub fn set_repo(&mut self, repo: Arc<dyn UsersRepository>) {
         self.repo = repo;
     }
-    pub fn set_authorizer(&mut self, authorizer: Arc<dyn Authorizer>) {
-        self.authorizer = authorizer;
-    }
+
     pub fn set_crypto(&mut self, crypto: Arc<dyn CryptoService>) {
         self.crypto = crypto;
     }
-    pub fn set_auth_resolver(&mut self, auth_resolver: Arc<dyn AuthPayloadResolver>) {
-        self.auth_resolver = auth_resolver;
+    pub fn set_auth_with_password_validator(
+        &mut self,
+        auth_with_password_validator: Arc<dyn AuthWithPasswordValidator>,
+    ) {
+        self.auth_with_password_validator = auth_with_password_validator;
     }
 }
 pub struct ChangeUsersPasswordInput {
@@ -55,14 +53,18 @@ impl ChangeUsersPasswordInteractor {
         if !auth.can(CHANGE_OTHERS_PASSWORD_ACTION) {
             return Err(ForBiddenException("".into()));
         }
-        let modifier_user = self.auth_resolver.resolve(auth).await?;
-        if !self
-            .authorizer
-            .authorize(&modifier_user, &input.password)
-            .await?
-        {
-            return Err(BadRequestException("".into()));
-        }
+
+        self.auth_with_password_validator
+            .validate_or_fail(auth, &input.password)
+            .await?;
+        // let modifier_user = self.auth_resolver.resolve(auth).await?;
+        // if !self
+        //     .authorizer
+        //     .authorize(&modifier_user, &input.password)
+        //     .await?
+        // {
+        //     return Err(BadRequestException("".into()));
+        // }
 
         let mut user = self.repo.get_by_id_or_fail(&input.user_id).await?;
         user.password = self.crypto.hash(&input.new_password).await?;
@@ -73,10 +75,9 @@ impl ChangeUsersPasswordInteractor {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::access_management::auth_payload_resolver_spy::AuthPayloadResolverSpy;
     use crate::test_utils::access_management::auth_payload_spy::AuthPayloadSpy;
+    use crate::test_utils::access_management::auth_with_password_validator_spy::AuthWithPasswordValidatorSpy;
     use crate::test_utils::access_management::role_spy::RoleSpy;
-    use crate::test_utils::crypto::authorizer_spy::AuthorizerSpy;
     use crate::test_utils::crypto::crypto_service_spy::{CryptoServiceSpy, HASH_RESULT};
     use crate::test_utils::errors_assertion::{
         assert_bad_request_error, assert_forbidden_error, assert_not_found_error,
@@ -89,9 +90,8 @@ mod tests {
     struct CreationResult {
         interactor: ChangeUsersPasswordInteractor,
         repo: Arc<FakeUsersRepository>,
-        authorizer: Arc<AuthorizerSpy>,
         crypto: Arc<CryptoServiceSpy>,
-        resolver: Arc<AuthPayloadResolverSpy>,
+        auth_with_password_validator: Arc<AuthWithPasswordValidatorSpy>,
     }
     fn modifying_user() -> User {
         User {
@@ -125,21 +125,19 @@ mod tests {
             modifying_user(),
             modifier_user(),
         ]));
-        let authorizer = Arc::new(AuthorizerSpy::new_authorized());
+
         let crypto = Arc::new(CryptoServiceSpy::new_verified());
-        let resolver = Arc::new(AuthPayloadResolverSpy::new_returning(modifier_user()));
+        let auth_with_password_validator = Arc::new(AuthWithPasswordValidatorSpy::new_verified());
         let interactor = ChangeUsersPasswordInteractor::new(
             repo.clone(),
-            authorizer.clone(),
             crypto.clone(),
-            resolver.clone(),
+            auth_with_password_validator.clone(),
         );
         CreationResult {
             interactor,
             repo,
-            authorizer,
             crypto,
-            resolver,
+            auth_with_password_validator,
         }
     }
 
@@ -183,9 +181,9 @@ mod tests {
     #[tokio::test]
     async fn should_throw_bad_request_error_if_password_is_not_correct() {
         let CreationResult { mut interactor, .. } = create_interactor();
-        let authorizer = Arc::new(AuthorizerSpy::new_unauthorized());
-        interactor.set_authorizer(authorizer);
-
+        interactor.set_auth_with_password_validator(Arc::from(
+            AuthWithPasswordValidatorSpy::new_unverified(),
+        ));
         let error = interactor
             .execute(&auth(), valid_input())
             .await
@@ -195,10 +193,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_resolve_auth_payload() {
+    async fn should_pass_auth_payload_and_password_to_auth_with_password_validator() {
         let CreationResult {
             interactor,
-            resolver,
+            auth_with_password_validator,
             ..
         } = create_interactor();
         let payload_spy = &auth();
@@ -209,8 +207,8 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            *resolver.payload_ids.lock().unwrap(),
-            [payload_spy.get_user_id()]
+            *auth_with_password_validator.get_called_with(),
+            [(payload_spy.get_user_id(), valid_input().password.into())]
         );
     }
 
