@@ -78,10 +78,7 @@ mod tests {
         let auth_resolver = creation_result.auth_resolver;
         let auth = AuthPayloadSpy::new_allowed("RETURNING_ID".into());
         let _ = interactor.execute(&auth).await.unwrap();
-        assert_eq!(
-            *auth_resolver.payload_ids.lock().unwrap(),
-            vec!["RETURNING_ID".to_string()]
-        );
+        assert_eq!(*auth_resolver.payload_ids.lock().unwrap(), ["RETURNING_ID"]);
     }
 
     #[tokio::test]

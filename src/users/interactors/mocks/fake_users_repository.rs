@@ -64,9 +64,9 @@ impl FakeUsersRepository {
             users: Mutex::new(Vec::new()),
         }
     }
-    pub fn new_with_data(users: Vec<User>) -> Self {
+    pub fn new_with_data(users: &[User]) -> Self {
         FakeUsersRepository {
-            users: Mutex::new(users),
+            users: Mutex::new(Vec::from(users)),
         }
     }
     pub fn get_users(&self) -> Vec<User> {

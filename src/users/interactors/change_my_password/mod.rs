@@ -102,7 +102,7 @@ mod tests {
         auth_resolver: Arc<AuthPayloadResolverSpy>,
     }
     fn create_interactor() -> CreationResult {
-        let repo = Arc::new(FakeUsersRepository::new_with_data(vec![User {
+        let repo = Arc::new(FakeUsersRepository::new_with_data(&[User {
             id: auth().get_user_id(),
             email: "".into(),
             password: valid_input().old_password,
@@ -181,7 +181,7 @@ mod tests {
 
         i.execute(&auth(), valid_input()).await.unwrap();
 
-        c.assert_hash_calls(vec![valid_input().new_password.into()]);
+        c.assert_hash_calls(&[&valid_input().new_password]);
     }
     #[tokio::test]
     async fn should_store_the_hashed_password_in_repository() {

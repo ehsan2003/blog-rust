@@ -209,7 +209,7 @@ mod tests {
     #[tokio::test]
     async fn should_throw_validation_error_when_data_is_invalid() {
         let CreationResult { interactor: i, .. } = create_interactor();
-        let inputs = vec![CreateUserInput {
+        let inputs = [CreateUserInput {
             role: "test".to_owned(),
             name: "pest".to_owned(),
             email: "b.com".to_owned(),
@@ -242,7 +242,7 @@ mod tests {
 
         i.execute(valid_input.clone(), &auth()).await.unwrap();
         let called_with = spy.get_create_role_calls();
-        assert_eq!(*called_with, vec![valid_input.role.clone()]);
+        assert_eq!(*called_with, [valid_input.role]);
     }
     #[tokio::test]
     async fn should_call_generate_random_password() {
@@ -264,7 +264,7 @@ mod tests {
             ..
         } = create_interactor();
         i.execute(valid_input(), &auth()).await.unwrap();
-        crypto_service.assert_hash_calls(vec![SECURE_RANDOM_PASSWORD.to_owned()]);
+        crypto_service.assert_hash_calls(&[SECURE_RANDOM_PASSWORD]);
     }
     #[tokio::test]
     async fn should_throw_duplication_exception_when_email_already_exists() {
@@ -273,7 +273,7 @@ mod tests {
         } = create_interactor();
         let input = valid_input();
 
-        i.set_repo(Arc::new(FakeUsersRepository::new_with_data(vec![User {
+        i.set_repo(Arc::new(FakeUsersRepository::new_with_data(&[User {
             email: input.email,
             name: input.name,
             role: Box::from(RoleSpy::new_allowed()),

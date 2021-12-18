@@ -62,7 +62,7 @@ mod tests {
     }
 
     fn create_interactor() -> CreationResult {
-        let repo = Arc::new(FakeUsersRepository::new_with_data(vec![
+        let repo = Arc::new(FakeUsersRepository::new_with_data(&[
             User {
                 id: "1".to_string(),
                 name: "user1".to_string(),

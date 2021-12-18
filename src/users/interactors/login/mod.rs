@@ -96,7 +96,7 @@ mod tests {
         }
     }
     fn create_interactor() -> CreationResult {
-        let repo = Arc::new(FakeUsersRepository::new_with_data(vec![initial_user()]));
+        let repo = Arc::new(FakeUsersRepository::new_with_data(&[initial_user()]));
         let authorizer = Arc::new(AuthorizerSpy::new_authorized());
         let role_namer = Arc::new(RoleNamerSpy::new_returning("named_role".into()));
 

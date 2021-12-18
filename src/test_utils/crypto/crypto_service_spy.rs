@@ -26,7 +26,7 @@ impl CryptoServiceSpy {
         }
     }
 
-    pub fn assert_hash_calls(&self, expected: Vec<String>) {
+    pub fn assert_hash_calls(&self, expected: &[&str]) {
         let called_with = self.hash_called_with.lock().unwrap();
         assert_eq!(*called_with, expected);
     }

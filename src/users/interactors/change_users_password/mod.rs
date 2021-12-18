@@ -122,7 +122,7 @@ mod tests {
         }
     }
     fn create_interactor() -> CreationResult {
-        let repo = Arc::new(FakeUsersRepository::new_with_data(vec![
+        let repo = Arc::new(FakeUsersRepository::new_with_data(&[
             modifying_user(),
             modifier_user(),
         ]));
@@ -149,15 +149,10 @@ mod tests {
         let CreationResult { interactor, .. } = create_interactor();
         let mut valid_input = valid_input();
         valid_input.user_id = "not found".into();
-        let error = interactor
-            .execute(
-                &AuthPayloadSpy::new_allowed("ALLOWED_ID".into()),
-                valid_input,
-            )
-            .await
-            .unwrap_err();
+        let error = interactor.execute(&auth(), valid_input).await.unwrap_err();
         assert_not_found_error(error);
     }
+
     #[tokio::test]
     async fn should_throw_error_if_payload_is_not_allowed() {
         let CreationResult { interactor, .. } = create_interactor();
@@ -173,13 +168,10 @@ mod tests {
     #[tokio::test]
     async fn should_pass_appropriate_action_to_payload() {
         let CreationResult { interactor, .. } = create_interactor();
-        let payload_spy = AuthPayloadSpy::new_allowed("ALLOWED_ID".into());
+        let payload_spy = auth();
         let valid_input = valid_input();
         interactor.execute(&payload_spy, valid_input).await.unwrap();
-        assert_eq!(
-            payload_spy.get_called(),
-            vec![CHANGE_OTHERS_PASSWORD_ACTION]
-        );
+        assert_eq!(payload_spy.get_called(), [CHANGE_OTHERS_PASSWORD_ACTION]);
     }
 
     #[tokio::test]
@@ -188,10 +180,7 @@ mod tests {
         let authorizer = Arc::new(AuthorizerSpy::new_unauthorized());
         interactor.set_authorizer(authorizer);
         let error = interactor
-            .execute(
-                &AuthPayloadSpy::new_allowed("ALLOWED_ID".into()),
-                valid_input(),
-            )
+            .execute(&auth(), valid_input())
             .await
             .unwrap_err();
         assert_forbidden_error(error);
@@ -205,45 +194,39 @@ mod tests {
             ..
         } = create_interactor();
 
-        let payload_spy = &AuthPayloadSpy::new_allowed("ALLOWED_ID".into());
+        let payload_spy = &auth();
         interactor
             .execute(payload_spy, valid_input())
             .await
             .unwrap();
         assert_eq!(
             *resolver.payload_ids.lock().unwrap(),
-            vec![payload_spy.get_user_id()]
+            [payload_spy.get_user_id()]
         );
     }
+
+    fn auth() -> AuthPayloadSpy {
+        AuthPayloadSpy::new_allowed("ALLOWED_ID".into())
+    }
+
     #[tokio::test]
     async fn should_pass_new_password_to_hash() {
         let CreationResult {
             interactor, crypto, ..
         } = create_interactor();
 
-        interactor
-            .execute(
-                &AuthPayloadSpy::new_allowed("ALLOWED_ID".into()),
-                valid_input(),
-            )
-            .await
-            .unwrap();
+        interactor.execute(&auth(), valid_input()).await.unwrap();
 
-        crypto.assert_hash_calls(vec![(valid_input().new_password.into())]);
+        crypto.assert_hash_calls(&[&valid_input().new_password]);
     }
+
     #[tokio::test]
     async fn should_store_password_in_repository() {
         let CreationResult {
             interactor, repo, ..
         } = create_interactor();
 
-        interactor
-            .execute(
-                &AuthPayloadSpy::new_allowed("ALLOWED_ID".into()),
-                valid_input(),
-            )
-            .await
-            .unwrap();
+        interactor.execute(&auth(), valid_input()).await.unwrap();
 
         let user = repo.get_by_id(&modifying_user().id).await.unwrap().unwrap();
         assert_eq!(user.password, HASH_RESULT);
