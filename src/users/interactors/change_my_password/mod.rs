@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
+use ApplicationException::ForBiddenException;
+
 use crate::errors::validation::ValidationError;
+use crate::errors::ApplicationException::BadRequestException;
 use crate::errors::{ApplicationException, ApplicationResult};
 use crate::users::interactors::traits::UsersRepository;
 use crate::utils::{AuthPayload, AuthPayloadResolver, Authorizer, CryptoService, Validatable};
@@ -61,15 +64,12 @@ impl ChangeMyPasswordInteractor {
     ) -> ApplicationResult<()> {
         input.validate()?;
         let mut user = self.auth_payload_resolver.resolve(auth).await?;
-
         if !self
             .authorizer
             .authorize(&user, &input.old_password)
             .await?
         {
-            return Err(ApplicationException::ForBiddenException(
-                "Old password is wrong".into(),
-            ));
+            return Err(BadRequestException("Old password is wrong".into()));
         }
         let password = self.crypto.hash(&input.new_password).await?;
 
@@ -87,7 +87,7 @@ mod tests {
     use crate::test_utils::crypto::authorizer_spy::AuthorizerSpy;
     use crate::test_utils::crypto::crypto_service_spy::{CryptoServiceSpy, HASH_RESULT};
     use crate::test_utils::errors_assertion::{
-        assert_forbidden_error, assert_validation_error_with_key,
+        assert_bad_request_error, assert_forbidden_error, assert_validation_error_with_key,
     };
     use crate::users::domain::User;
     use crate::users::interactors::mocks::fake_users_repository::FakeUsersRepository;
@@ -168,7 +168,7 @@ mod tests {
         let authorizer_calls = a.get_calls().get(0).unwrap().clone();
         assert_eq!(authorizer_calls.1, valid_input().old_password);
         assert_eq!(authorizer_calls.0.id, resolved_user().id);
-        assert_forbidden_error(result)
+        assert_bad_request_error(result)
     }
 
     #[tokio::test]
