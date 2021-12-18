@@ -22,7 +22,7 @@ impl RandomService for RandomServiceSpy {
         Ok(RANDOM_ID.into())
     }
 }
-
+#[allow(unused)]
 impl RandomServiceSpy {
     pub fn new() -> Self {
         RandomServiceSpy {

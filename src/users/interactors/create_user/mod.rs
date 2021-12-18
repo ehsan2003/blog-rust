@@ -145,7 +145,7 @@ impl Validatable for CreateUserInput {
         Ok(())
     }
 }
-
+#[allow(unused)]
 #[derive(Debug, Clone)]
 pub struct CreateUserOutput {
     password: String,

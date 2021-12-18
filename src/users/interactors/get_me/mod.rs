@@ -9,7 +9,7 @@ pub struct GetMeInteractor {
     pub auth_resolver: Arc<dyn AuthPayloadResolver>,
     pub role_namer: Arc<dyn RoleNamer>,
 }
-
+#[allow(unused)]
 impl GetMeInteractor {
     pub fn new(
         auth_resolver: Arc<dyn AuthPayloadResolver>,
@@ -45,6 +45,7 @@ mod tests {
 
     use super::*;
 
+    #[allow(unused)]
     struct CreationResult {
         interactor: GetMeInteractor,
         role_namer: Arc<RoleNamerSpy>,

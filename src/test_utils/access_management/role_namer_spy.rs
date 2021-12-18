@@ -13,7 +13,7 @@ impl RoleNamer for RoleNamerSpy {
         self.returning_name.clone()
     }
 }
-
+#[allow(unused)]
 impl RoleNamerSpy {
     pub fn new() -> RoleNamerSpy {
         Self {

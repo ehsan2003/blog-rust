@@ -19,7 +19,7 @@ impl RoleFactory for RoleFactorySpy {
         self.returning_role.clone()
     }
 }
-
+#[allow(unused)]
 impl RoleFactorySpy {
     pub fn new(returning_role: Option<Box<dyn Role>>) -> Self {
         RoleFactorySpy {

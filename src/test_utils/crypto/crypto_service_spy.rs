@@ -9,7 +9,7 @@ pub struct CryptoServiceSpy {
     pub hash_called_with: Mutex<Vec<String>>,
     pub verify_called_with: Mutex<Vec<(String, String)>>,
 }
-
+#[allow(unused)]
 impl CryptoServiceSpy {
     pub fn new_verified() -> CryptoServiceSpy {
         CryptoServiceSpy {

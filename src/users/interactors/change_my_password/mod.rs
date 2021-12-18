@@ -1,10 +1,8 @@
 use std::sync::Arc;
 
-use ApplicationException::ForBiddenException;
-
 use crate::errors::validation::ValidationError;
 use crate::errors::ApplicationException::BadRequestException;
-use crate::errors::{ApplicationException, ApplicationResult};
+use crate::errors::ApplicationResult;
 use crate::users::interactors::traits::UsersRepository;
 use crate::utils::{AuthPayload, AuthPayloadResolver, Authorizer, CryptoService, Validatable};
 
@@ -31,6 +29,7 @@ pub struct ChangeMyPasswordInteractor {
     auth_payload_resolver: Arc<dyn AuthPayloadResolver>,
 }
 
+#[allow(unused)]
 impl ChangeMyPasswordInteractor {
     pub fn new(
         repo: Arc<dyn UsersRepository>,
@@ -87,13 +86,14 @@ mod tests {
     use crate::test_utils::crypto::authorizer_spy::AuthorizerSpy;
     use crate::test_utils::crypto::crypto_service_spy::{CryptoServiceSpy, HASH_RESULT};
     use crate::test_utils::errors_assertion::{
-        assert_bad_request_error, assert_forbidden_error, assert_validation_error_with_key,
+        assert_bad_request_error, assert_validation_error_with_key,
     };
     use crate::users::domain::User;
     use crate::users::interactors::mocks::fake_users_repository::FakeUsersRepository;
 
     use super::*;
 
+    #[allow(unused)]
     struct CreationResult {
         interactor: ChangeMyPasswordInteractor,
         repo: Arc<FakeUsersRepository>,
@@ -165,7 +165,7 @@ mod tests {
         let a = Arc::new(AuthorizerSpy::new_unauthorized());
         i.set_authorizer(a.clone());
         let result = i.execute(&auth(), valid_input()).await.unwrap_err();
-        let authorizer_calls = a.get_calls().get(0).unwrap().clone();
+        let _authorizer_calls = a.get_calls().get(0).unwrap().clone();
 
         assert_bad_request_error(result)
     }
@@ -173,7 +173,7 @@ mod tests {
     #[tokio::test]
     async fn should_pass_old_password_with_user_to_authorizer() {
         let CreationResult {
-            interactor: mut i,
+            interactor: i,
             authorizer: a,
             ..
         } = create_interactor();

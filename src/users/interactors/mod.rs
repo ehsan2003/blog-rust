@@ -9,3 +9,4 @@ pub mod traits;
 pub mod utils;
 pub mod get_me;
 pub mod logout;
+pub mod delete_user;

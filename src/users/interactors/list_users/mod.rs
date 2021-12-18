@@ -16,7 +16,7 @@ pub struct ListUsersInteractor {
     repo: Arc<dyn UsersRepository>,
     role_namer: Arc<dyn RoleNamer>,
 }
-
+#[allow(unused)]
 impl ListUsersInteractor {
     pub fn new(repo: Arc<dyn UsersRepository>, role_namer: Arc<dyn RoleNamer>) -> Self {
         Self { repo, role_namer }

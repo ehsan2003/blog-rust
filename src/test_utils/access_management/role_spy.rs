@@ -22,7 +22,7 @@ impl Role for RoleSpy {
         self.can
     }
 }
-
+#[allow(unused)]
 impl RoleSpy {
     pub fn new_allowed() -> RoleSpy {
         RoleSpy {
