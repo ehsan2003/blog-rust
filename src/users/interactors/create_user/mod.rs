@@ -226,7 +226,9 @@ mod tests {
             interactor: mut i, ..
         } = create_interactor();
         i.set_role_factory(Arc::new(RoleFactorySpy::new(None)));
+
         let error = i.execute(valid_input(), &auth()).await.unwrap_err();
+
         assert_validation_error_with_key(error, "role");
     }
 
@@ -252,18 +254,21 @@ mod tests {
             ..
         } = create_interactor();
         let valid_input = valid_input();
+
         i.execute(valid_input.clone(), &auth()).await.unwrap();
 
         spy.assert_secure_random_called();
     }
     #[tokio::test]
-    async fn should_hash_generated_password() {
+    async fn should_call_hash_with_randomly_generated_password() {
         let CreationResult {
             interactor: i,
             crypto_service,
             ..
         } = create_interactor();
+
         i.execute(valid_input(), &auth()).await.unwrap();
+
         crypto_service.assert_hash_calls(&[SECURE_RANDOM_PASSWORD]);
     }
     #[tokio::test]
@@ -272,7 +277,6 @@ mod tests {
             interactor: mut i, ..
         } = create_interactor();
         let input = valid_input();
-
         i.set_repo(Arc::new(FakeUsersRepository::new_with_data(&[User {
             email: input.email,
             name: input.name,
@@ -282,6 +286,7 @@ mod tests {
         }])));
 
         let err = i.execute(valid_input(), &auth()).await.unwrap_err();
+
         assert_duplication_error(err, "email")
     }
     #[tokio::test]
@@ -291,11 +296,13 @@ mod tests {
             repo,
             ..
         } = create_interactor();
-        let input = valid_input();
-        i.execute(input.clone(), &auth()).await.unwrap();
+
+        i.execute(valid_input().clone(), &auth()).await.unwrap();
+
         let stored_user = repo.get_users().get(0).expect("should have a user").clone();
-        assert_eq!(stored_user.email, input.email);
-        assert_eq!(stored_user.name, input.name);
+
+        assert_eq!(stored_user.email, valid_input().email);
+        assert_eq!(stored_user.name, valid_input().name);
         assert_eq!(stored_user.password, HASH_RESULT);
         assert_eq!(stored_user.id, RANDOM_ID);
     }

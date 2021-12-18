@@ -22,6 +22,9 @@ pub struct LoginOutput {
     user_id: String,
     role: String,
 }
+
+const CREDENTIALS_ERROR: &'static str = "invalid credentials";
+
 #[allow(unused)]
 impl LoginInteractor {
     pub fn new(
@@ -46,14 +49,18 @@ impl LoginInteractor {
     }
 
     pub async fn execute(&self, input: LoginInput) -> ApplicationResult<LoginOutput> {
-        let user = match self.repo.get_by_email(&input.email).await? {
-            None => return Err(BadRequestException("invalid credentials".into())),
-            Some(user) => user,
-        };
-        let is_correct = self.authorizer.authorize(&user, &input.password).await?;
-        if !is_correct {
-            return Err(BadRequestException("invalid credentials".into()));
-        }
+        let error = BadRequestException("invalid credentials".into());
+        let user = self
+            .repo
+            .get_by_email_or_fail(&input.email)
+            .await
+            .map_err(|_| BadRequestException(CREDENTIALS_ERROR.into()))?;
+
+        self.authorizer
+            .authorize_or_fail(&user, &input.password)
+            .await
+            .map_err(|_| BadRequestException(CREDENTIALS_ERROR.into()))?;
+
         Ok(LoginOutput {
             user_id: user.id.into(),
             role: self.role_namer.name_role(user.role).unwrap(),

@@ -64,10 +64,7 @@ impl ChangeUsersPasswordInteractor {
             return Err(ForBiddenException("".into()));
         }
 
-        let mut user = match self.repo.get_by_id(&input.user_id).await? {
-            None => return Err(NotFoundException("".into())),
-            Some(user) => user,
-        };
+        let mut user = self.repo.get_by_id_or_fail(&input.user_id).await?;
         user.password = self.crypto.hash(&input.new_password).await?;
         self.repo.update(&user).await?;
         Ok(())
