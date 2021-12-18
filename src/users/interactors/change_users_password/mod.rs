@@ -61,7 +61,7 @@ impl ChangeUsersPasswordInteractor {
             .authorize(&modifier_user, &input.password)
             .await?
         {
-            return Err(ForBiddenException("".into()));
+            return Err(BadRequestException("".into()));
         }
 
         let mut user = self.repo.get_by_id_or_fail(&input.user_id).await?;
@@ -78,7 +78,9 @@ mod tests {
     use crate::test_utils::access_management::role_spy::RoleSpy;
     use crate::test_utils::crypto::authorizer_spy::AuthorizerSpy;
     use crate::test_utils::crypto::crypto_service_spy::{CryptoServiceSpy, HASH_RESULT};
-    use crate::test_utils::errors_assertion::{assert_forbidden_error, assert_not_found_error};
+    use crate::test_utils::errors_assertion::{
+        assert_bad_request_error, assert_forbidden_error, assert_not_found_error,
+    };
     use crate::users::domain::User;
     use crate::users::interactors::mocks::fake_users_repository::FakeUsersRepository;
 
@@ -144,9 +146,12 @@ mod tests {
     #[tokio::test]
     async fn should_throw_error_if_user_id_not_found() {
         let CreationResult { interactor, .. } = create_interactor();
+
         let mut valid_input = valid_input();
         valid_input.user_id = "not found".into();
+
         let error = interactor.execute(&auth(), valid_input).await.unwrap_err();
+
         assert_not_found_error(error);
     }
 
@@ -155,10 +160,12 @@ mod tests {
         let CreationResult { interactor, .. } = create_interactor();
         let payload_spy = AuthPayloadSpy::new_disallowed("WEAK".into());
         let valid_input = valid_input();
+
         let error = interactor
             .execute(&payload_spy, valid_input)
             .await
             .unwrap_err();
+
         assert_forbidden_error(error);
     }
 
@@ -167,20 +174,24 @@ mod tests {
         let CreationResult { interactor, .. } = create_interactor();
         let payload_spy = auth();
         let valid_input = valid_input();
+
         interactor.execute(&payload_spy, valid_input).await.unwrap();
+
         assert_eq!(payload_spy.get_called(), [CHANGE_OTHERS_PASSWORD_ACTION]);
     }
 
     #[tokio::test]
-    async fn should_throw_forbidden_error_if_password_is_not_correct() {
+    async fn should_throw_bad_request_error_if_password_is_not_correct() {
         let CreationResult { mut interactor, .. } = create_interactor();
         let authorizer = Arc::new(AuthorizerSpy::new_unauthorized());
         interactor.set_authorizer(authorizer);
+
         let error = interactor
             .execute(&auth(), valid_input())
             .await
             .unwrap_err();
-        assert_forbidden_error(error);
+
+        assert_bad_request_error(error);
     }
 
     #[tokio::test]
@@ -190,12 +201,13 @@ mod tests {
             resolver,
             ..
         } = create_interactor();
-
         let payload_spy = &auth();
+
         interactor
             .execute(payload_spy, valid_input())
             .await
             .unwrap();
+
         assert_eq!(
             *resolver.payload_ids.lock().unwrap(),
             [payload_spy.get_user_id()]
