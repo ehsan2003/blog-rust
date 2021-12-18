@@ -156,9 +156,9 @@ mod tests {
 
         assert_validation_error_with_key(result, "new_password");
     }
+
     #[tokio::test]
-    async fn should_throw_if_authorizer_refuses_the_old_password_and_pass_old_password_with_id_to_authorizer(
-    ) {
+    async fn should_throw_if_authorizer_refuses_the_old_password_and() {
         let CreationResult {
             interactor: mut i, ..
         } = create_interactor();
@@ -166,9 +166,24 @@ mod tests {
         i.set_authorizer(a.clone());
         let result = i.execute(&auth(), valid_input()).await.unwrap_err();
         let authorizer_calls = a.get_calls().get(0).unwrap().clone();
-        assert_eq!(authorizer_calls.1, valid_input().old_password);
-        assert_eq!(authorizer_calls.0.id, resolved_user().id);
+
         assert_bad_request_error(result)
+    }
+
+    #[tokio::test]
+    async fn should_pass_old_password_with_user_to_authorizer() {
+        let CreationResult {
+            interactor: mut i,
+            authorizer: a,
+            ..
+        } = create_interactor();
+
+        i.execute(&auth(), valid_input()).await.unwrap();
+
+        let (authorized_user, authorized_password) = a.get_calls().get(0).unwrap().clone();
+
+        assert_eq!(authorized_password, valid_input().old_password);
+        assert_eq!(authorized_user.id, resolved_user().id);
     }
 
     #[tokio::test]
