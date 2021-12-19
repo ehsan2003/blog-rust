@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use crate::errors::validation::ValidationError;
-use crate::errors::ApplicationException::BadRequestException;
 use crate::errors::ApplicationResult;
 use crate::users::interactors::traits::UsersRepository;
 use crate::utils::{AuthPayload, AuthPayloadResolver, Authorizer, CryptoService, Validatable};
@@ -63,13 +62,11 @@ impl ChangeMyPasswordInteractor {
     ) -> ApplicationResult<()> {
         input.validate()?;
         let mut user = self.auth_payload_resolver.resolve(auth).await?;
-        if !self
-            .authorizer
-            .authorize(&user, &input.old_password)
-            .await?
-        {
-            return Err(BadRequestException("Old password is wrong".into()));
-        }
+
+        self.authorizer
+            .authorize_or_fail(&user, &input.old_password)
+            .await?;
+
         let password = self.crypto.hash(&input.new_password).await?;
 
         user.password = password;
