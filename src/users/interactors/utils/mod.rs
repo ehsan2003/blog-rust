@@ -16,6 +16,6 @@ pub fn get_visible_user(user: User, role_namer: Arc<dyn RoleNamer>) -> VisibleUs
         id: user.id,
         name: user.name,
         email: user.email,
-        role: role_namer.name_role(user.role).unwrap().into(),
+        role: role_namer.name_role(user.role).into(),
     }
 }

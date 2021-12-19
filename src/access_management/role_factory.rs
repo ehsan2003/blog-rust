@@ -6,5 +6,5 @@ pub trait RoleFactory: Send + Sync {
 }
 
 pub trait RoleNamer: Send + Sync {
-    fn name_role(&self, role: Box<dyn Role>) -> Option<String>;
+    fn name_role(&self, role: Box<dyn Role>) -> String;
 }

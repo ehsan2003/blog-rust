@@ -31,10 +31,7 @@ impl ListUsersInteractor {
 
 impl ListUsersInteractor {
     pub async fn execute(&self, auth: &(dyn AuthPayload)) -> ApplicationResult<ListUsersOutput> {
-        if !(auth.can(LIST_USERS_ACTION)) {
-            return Err(ForBiddenException("".to_string()));
-        }
-
+        auth.can_or_fail(LIST_USERS_ACTION)?;
         let users = self.repo.get_all().await?;
         return Ok(ListUsersOutput {
             users: users

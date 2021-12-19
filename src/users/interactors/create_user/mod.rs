@@ -54,9 +54,7 @@ impl CreateUserInteractor {
         auth: &(dyn AuthPayload),
     ) -> ApplicationResult<CreateUserOutput> {
         self.validate_or_fail(&input)?;
-        if !auth.can(CREATE_USER_ACTION) {
-            return Err(ForBiddenException("".into()));
-        }
+        auth.can_or_fail(CREATE_USER_ACTION)?;
 
         self.check_email_or_fail(&input).await?;
         let random_password = self.random_service.secure_random_password().await?;

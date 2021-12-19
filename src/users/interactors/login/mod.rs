@@ -63,7 +63,7 @@ impl LoginInteractor {
 
         Ok(LoginOutput {
             user_id: user.id.into(),
-            role: self.role_namer.name_role(user.role).unwrap(),
+            role: self.role_namer.name_role(user.role),
         })
     }
 }

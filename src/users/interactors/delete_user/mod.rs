@@ -50,11 +50,8 @@ impl DeleteUserInteractor {
         auth: &(dyn AuthPayload),
         input: DeleteUserInput,
     ) -> ApplicationResult<()> {
-        if !auth.can(DELETE_USER_ACTION) {
-            return Err(ForBiddenException(
-                "You are not allowed to delete users".to_string(),
-            ));
-        }
+        auth.can_or_fail(DELETE_USER_ACTION)?;
+        
         self.auth_with_password_validator
             .validate_or_fail(auth, &input.password)
             .await?;

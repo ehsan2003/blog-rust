@@ -50,9 +50,7 @@ impl ChangeUsersPasswordInteractor {
         auth: &(dyn AuthPayload),
         input: ChangeUsersPasswordInput,
     ) -> ApplicationResult<()> {
-        if !auth.can(CHANGE_OTHERS_PASSWORD_ACTION) {
-            return Err(ForBiddenException("".into()));
-        }
+        auth.can_or_fail(CHANGE_OTHERS_PASSWORD_ACTION)?;
 
         self.auth_with_password_validator
             .validate_or_fail(auth, &input.password)
