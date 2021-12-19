@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use crate::errors::ApplicationException::ForBiddenException;
 use crate::errors::ApplicationResult;
 use crate::users::interactors::actions::DELETE_USER_ACTION;
 use crate::users::interactors::traits::UsersRepository;
@@ -51,7 +50,7 @@ impl DeleteUserInteractor {
         input: DeleteUserInput,
     ) -> ApplicationResult<()> {
         auth.can_or_fail(DELETE_USER_ACTION)?;
-        
+
         self.auth_with_password_validator
             .validate_or_fail(auth, &input.password)
             .await?;

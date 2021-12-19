@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use ApplicationException::*;
-
-use crate::errors::{ApplicationException, ApplicationResult};
+use crate::errors::ApplicationResult;
 use crate::users::interactors::actions::CHANGE_OTHERS_PASSWORD_ACTION;
 use crate::users::interactors::traits::UsersRepository;
 use crate::utils::{AuthPayload, AuthWithPasswordValidator, CryptoService};

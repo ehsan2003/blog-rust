@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use crate::access_management::RoleNamer;
-use crate::errors::ApplicationException::ForBiddenException;
 use crate::errors::ApplicationResult;
 use crate::users::interactors::actions::LIST_USERS_ACTION;
 use crate::users::interactors::traits::UsersRepository;
