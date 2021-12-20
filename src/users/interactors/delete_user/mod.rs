@@ -87,86 +87,67 @@ mod tests {
 
     #[tokio::test]
     async fn should_throw_not_found_error_if_user_not_found() {
-        let CreationResult { interactor: i, .. } = create_interactor();
+        let c = create_interactor();
         let input = DeleteUserInput {
             id: "not found id".into(),
             password: "password".into(),
         };
 
-        let result = i.execute(&auth(), input).await.unwrap_err();
+        let result = c.interactor.execute(&auth(), input).await.unwrap_err();
 
         assert_not_found_error(result);
     }
 
     #[tokio::test]
     async fn should_throw_bad_request_error_if_auth_with_password_validator_is_not_verified() {
-        let CreationResult {
-            interactor: mut i, ..
-        } = create_interactor();
-
-        i.set_auth_with_password_validator(
-            Arc::new(AuthWithPasswordValidatorSpy::new_unverified()),
-        );
-        let result = i.execute(&auth(), valid_input()).await.unwrap_err();
+        let mut c = create_interactor();
+        c.interactor.set_auth_with_password_validator(Arc::new(
+            AuthWithPasswordValidatorSpy::new_unverified(),
+        ));
+        let result = c
+            .interactor
+            .execute(&auth(), valid_input())
+            .await
+            .unwrap_err();
 
         assert_bad_request_error(result);
     }
 
     #[tokio::test]
     async fn should_pass_auth_payload_and_password_to_auth_with_password_validator() {
-        let CreationResult {
-            interactor: i,
-            auth_with_password_validator,
-            ..
-        } = create_interactor();
-
-        i.execute(&auth(), valid_input()).await.unwrap();
+        let c = create_interactor();
+        c.interactor.execute(&auth(), valid_input()).await.unwrap();
 
         assert_eq!(
-            auth_with_password_validator.get_called_with(),
+            c.auth_with_password_validator.get_called_with(),
             [(auth().get_user_id(), valid_input().password.clone())]
         );
     }
 
     #[tokio::test]
     async fn should_call_revoker() {
-        let CreationResult {
-            interactor: i,
-            revoker,
-            ..
-        } = create_interactor();
+        let c = create_interactor();
+        c.interactor.execute(&auth(), valid_input()).await.unwrap();
 
-        i.execute(&auth(), valid_input()).await.unwrap();
-
-        assert_eq!(revoker.get_revoked_ids(), [valid_input().id]);
+        assert_eq!(c.revoker.get_revoked_ids(), [valid_input().id]);
     }
 
     #[tokio::test]
     async fn should_throw_forbidden_error_if_the_user_is_not_allowed_to_delete_another_user() {
-        let CreationResult { interactor: i, .. } = create_interactor();
+        let c = create_interactor();
+        let auth = &AuthPayloadSpy::new_disallowed("id".to_string());
 
-        let result = i
-            .execute(
-                &AuthPayloadSpy::new_disallowed("id".to_string()),
-                valid_input(),
-            )
-            .await
-            .unwrap_err();
+        let result = c.interactor.execute(auth, valid_input()).await.unwrap_err();
 
         assert_forbidden_error(result);
     }
 
     #[tokio::test]
     async fn should_delete_the_user_from_reporsitory() {
-        let CreationResult {
-            interactor: i,
-            repo,
-            ..
-        } = create_interactor();
+        let c = create_interactor();
+        c.interactor.execute(&auth(), valid_input()).await.unwrap();
 
-        i.execute(&auth(), valid_input()).await.unwrap();
-
-        assert_eq!(repo.get_users().len(), 0);
+        assert_eq!(c.repo.get_users().len(), 0);
     }
 
     pub fn valid_input() -> DeleteUserInput {

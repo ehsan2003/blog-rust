@@ -116,42 +116,39 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_validation_exception_if_the_new_password_is_not_valid() {
-        let CreationResult { interactor: i, .. } = create_interactor();
+        let c = create_interactor();
 
         let invalid = ChangeMyPasswordInput {
             old_password: "old_password".into(),
             new_password: "".into(),
         };
 
-        let result = i.execute(&auth(), invalid).await.unwrap_err();
+        let result = c.interactor.execute(&auth(), invalid).await.unwrap_err();
 
         assert_validation_error_with_key(result, "new_password");
     }
 
     #[tokio::test]
-    async fn should_throw_if_authorizer_refuses_the_old_password_and() {
-        let CreationResult {
-            interactor: mut i, ..
-        } = create_interactor();
-        let a = Arc::new(AuthorizerSpy::new_unauthorized());
-        i.set_authorizer(a.clone());
-        let result = i.execute(&auth(), valid_input()).await.unwrap_err();
-        let _authorizer_calls = a.get_calls().get(0).unwrap().clone();
+    async fn should_throw_if_authorizer_refuses_the_old_password() {
+        let mut c = create_interactor();
+        c.interactor
+            .set_authorizer(Arc::new(AuthorizerSpy::new_unauthorized()).clone());
+        let result = c
+            .interactor
+            .execute(&auth(), valid_input())
+            .await
+            .unwrap_err();
 
         assert_bad_request_error(result)
     }
 
     #[tokio::test]
     async fn should_pass_old_password_with_user_to_authorizer() {
-        let CreationResult {
-            interactor: i,
-            authorizer: a,
-            ..
-        } = create_interactor();
+        let c = create_interactor();
 
-        i.execute(&auth(), valid_input()).await.unwrap();
+        c.interactor.execute(&auth(), valid_input()).await.unwrap();
 
-        let (authorized_user, authorized_password) = a.get_calls().get(0).unwrap().clone();
+        let (authorized_user, authorized_password) = c.authorizer.get_calls()[0].clone();
 
         assert_eq!(authorized_password, valid_input().old_password);
         assert_eq!(authorized_user.id, resolved_user().id);
@@ -159,27 +156,19 @@ mod tests {
 
     #[tokio::test]
     async fn should_call_crypto_service_for_hashing_new_password() {
-        let CreationResult {
-            interactor: i,
-            crypto: c,
-            ..
-        } = create_interactor();
+        let c = create_interactor();
 
-        i.execute(&auth(), valid_input()).await.unwrap();
+        c.interactor.execute(&auth(), valid_input()).await.unwrap();
 
-        c.assert_hash_calls(&[&valid_input().new_password]);
+        c.crypto.assert_hash_calls(&[&valid_input().new_password]);
     }
     #[tokio::test]
     async fn should_store_the_hashed_password_in_repository() {
-        let CreationResult {
-            interactor: i,
-            repo: r,
-            ..
-        } = create_interactor();
+        let c = create_interactor();
 
-        i.execute(&auth(), valid_input()).await.unwrap();
+        c.interactor.execute(&auth(), valid_input()).await.unwrap();
 
-        assert_eq!(r.get_users()[0].password, HASH_RESULT);
+        assert_eq!(c.repo.get_users()[0].password, HASH_RESULT);
     }
     fn valid_input() -> ChangeMyPasswordInput {
         ChangeMyPasswordInput {

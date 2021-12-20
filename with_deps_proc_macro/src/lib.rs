@@ -15,8 +15,8 @@ pub fn with_depth(input: TokenStream) -> TokenStream {
         let ident = &f.ident;
         return ident;
     });
-    let field_names_clone = field_names.clone();
-    let field_with_types = fields.iter().map(|f| {
+
+    let new_arguments = fields.iter().map(|f| {
         let ident = &f.ident;
         let ty = &f.ty;
         return quote! {
@@ -35,9 +35,9 @@ pub fn with_depth(input: TokenStream) -> TokenStream {
     });
     let result = quote! {
         impl #name {
-            pub fn new(#(#field_with_types),*) -> Self {
+            pub fn new(#(#new_arguments),*) -> Self {
                 Self {
-                    #(#field_names_clone),*
+                    #(#field_names),*
                 }
             }
             #(#methods)*

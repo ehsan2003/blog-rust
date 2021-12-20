@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use serde::__private::de;
-
 use with_deps_proc_macro::WithDeps;
 
 use crate::access_management::RoleNamer;
@@ -61,9 +59,9 @@ mod tests {
     const AUTH_ID: &str = "ID";
     #[tokio::test]
     async fn should_pass_payload_to_resolver() {
-        let creation_result = create_interactor();
-        let interactor = creation_result.interactor;
-        let auth_resolver = creation_result.auth_resolver;
+        let c = create_interactor();
+        let interactor = c.interactor;
+        let auth_resolver = c.auth_resolver;
         interactor.execute(&auth()).await.unwrap();
         assert_eq!(*auth_resolver.payload_ids.lock().unwrap(), [AUTH_ID]);
     }
@@ -74,9 +72,10 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_a_valid_visible_user() {
-        let creation_result = create_interactor();
-        let interactor = creation_result.interactor;
-        let visible_user = interactor.execute(&auth()).await.unwrap();
+        let c = create_interactor();
+
+        let visible_user = c.interactor.execute(&auth()).await.unwrap();
+
         assert_eq!(visible_user.id, user().id);
         assert_eq!(visible_user.name, user().name);
     }

@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use serde::__private::de;
-
 use with_deps_proc_macro::WithDeps;
 use ApplicationException::*;
 
@@ -106,13 +104,14 @@ mod tests {
 
     #[tokio::test]
     async fn should_throw_error_if_user_does_not_exist() {
-        let CreationResult { interactor, .. } = create_interactor();
+        let c = create_interactor();
         let input_with_not_existing_email = LoginInput {
             email: "not_found@email.com".into(),
             password: "password".into(),
         };
 
-        let err = interactor
+        let err = c
+            .interactor
             .execute(input_with_not_existing_email)
             .await
             .unwrap_err();
@@ -122,10 +121,13 @@ mod tests {
 
     #[tokio::test]
     async fn should_throw_bad_request_if_authorizer_refuses_the_password() {
-        let CreationResult { mut interactor, .. } = create_interactor();
-        interactor.set_authorizer(Arc::new(AuthorizerSpy::new_unauthorized()));
+        let mut c = create_interactor();
 
-        let err = interactor
+        c.interactor
+            .set_authorizer(Arc::new(AuthorizerSpy::new_unauthorized()));
+
+        let err = c
+            .interactor
             .execute(LoginInput {
                 email: "a@email.com".into(),
                 password: "wrong_password".into(),
@@ -137,25 +139,23 @@ mod tests {
     }
     #[tokio::test]
     async fn should_pass_user_and_role_to_authorizer() {
-        let CreationResult {
-            interactor,
-            authorizer,
-            ..
-        } = create_interactor();
+        let c = create_interactor();
+
         let input = valid_input();
 
-        interactor.execute(input.clone()).await.unwrap();
+        c.interactor.execute(input.clone()).await.unwrap();
 
-        let (user, password) = authorizer.get_calls()[0].clone();
+        let (user, password) = c.authorizer.get_calls()[0].clone();
         assert_eq!(user.email, input.email);
         assert_eq!(password, input.password);
     }
     #[tokio::test]
     async fn should_return_user_id_and_role_name() {
-        let CreationResult { mut interactor, .. } = create_interactor();
-        interactor.set_role_namer(Arc::new(RoleNamerSpy::new_returning("role".into())));
+        let mut c = create_interactor();
+        c.interactor
+            .set_role_namer(Arc::new(RoleNamerSpy::new_returning("role".into())));
 
-        let output = interactor.execute(valid_input()).await.unwrap();
+        let output = c.interactor.execute(valid_input()).await.unwrap();
 
         assert_eq!(output.user_id, initial_user().id);
         assert_eq!(output.role, "role");

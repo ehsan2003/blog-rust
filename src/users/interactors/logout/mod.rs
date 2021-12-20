@@ -39,16 +39,13 @@ mod test {
 
     #[tokio::test]
     async fn should_pass_payload_to_revoker() {
-        let CreationResult {
-            interactor,
-            revoker,
-        } = create_interactor();
+        let c = create_interactor();
 
-        interactor
+        c.interactor
             .execute(&AuthPayloadSpy::new_allowed("".into()))
             .await
             .unwrap();
 
-        assert!(revoker.get_payload_ids().len() > 0);
+        assert!(c.revoker.get_payload_ids().len() > 0);
     }
 }

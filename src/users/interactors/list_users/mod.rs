@@ -1,7 +1,4 @@
 use std::sync::Arc;
-
-use serde::__private::de;
-
 use with_deps_proc_macro::WithDeps;
 
 use crate::access_management::RoleNamer;
@@ -80,32 +77,29 @@ mod tests {
     }
     #[tokio::test]
     async fn should_refuse_to_list_users_if_user_is_not_allowed() {
-        let CreationResult { interactor, .. } = create_interactor();
+        let c = create_interactor();
+
         let auth = AuthPayloadSpy::new_disallowed("ID".into());
 
-        let result = interactor.execute(&auth).await.unwrap_err();
+        let result = c.interactor.execute(&auth).await.unwrap_err();
 
         assert_forbidden_error(result);
     }
+
     #[tokio::test]
     async fn should_call_role_namer_for_each_user() {
-        let CreationResult {
-            interactor,
-            repo,
-            role_namer,
-        } = create_interactor();
-
-        interactor.execute(&allowed_auth()).await.unwrap();
+        let c = create_interactor();
+        c.interactor.execute(&allowed_auth()).await.unwrap();
 
         assert_eq!(
-            role_namer.called_with_roles.lock().unwrap().len(),
-            repo.get_users().len()
+            c.role_namer.called_with_roles.lock().unwrap().len(),
+            c.repo.get_users().len()
         );
     }
     #[tokio::test]
     async fn should_return_users_with_role_name() {
-        let CreationResult { interactor, .. } = create_interactor();
-        let result_users = interactor.execute(&allowed_auth()).await.unwrap().users;
+        let c = create_interactor();
+        let result_users = c.interactor.execute(&allowed_auth()).await.unwrap().users;
 
         for user in result_users {
             assert_eq!(user.role, ROLE_NAME);
@@ -114,14 +108,12 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_same_user_ids() {
-        let CreationResult {
-            interactor, repo, ..
-        } = create_interactor();
+        let c = create_interactor();
 
-        let users = interactor.execute(&allowed_auth()).await.unwrap().users;
+        let users = c.interactor.execute(&allowed_auth()).await.unwrap().users;
 
         for user in users {
-            assert!(repo.get_by_id(&user.id).await.unwrap().is_some());
+            assert!(c.repo.get_by_id(&user.id).await.unwrap().is_some());
         }
     }
 
