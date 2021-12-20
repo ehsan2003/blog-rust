@@ -1,0 +1,17 @@
+[package]
+name = "with_deps_proc_macro"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[test]]
+path = "tests/test.rs"
+name = "test"
+
+[lib]
+proc-macro = true
+[dev-dependencies]
+trybuild = "1.0.53"
+[dependencies]
+syn = { version = "1.0.82", features = ["extra-traits"] }
+quote = "1.0.10"

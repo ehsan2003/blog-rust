@@ -1,41 +1,17 @@
 use std::sync::Arc;
 
+use with_deps_proc_macro::WithDeps;
+
 use crate::errors::ApplicationResult;
 use crate::users::interactors::actions::DELETE_USER_ACTION;
 use crate::users::interactors::traits::UsersRepository;
 use crate::utils::{AuthPayload, AuthRevoker, AuthWithPasswordValidator};
 
+#[derive(WithDeps)]
 pub struct DeleteUserInteractor {
     repo: Arc<dyn UsersRepository>,
     auth_with_password_validator: Arc<dyn AuthWithPasswordValidator>,
     revoker: Arc<dyn AuthRevoker>,
-}
-
-#[allow(unused)]
-impl DeleteUserInteractor {
-    pub fn new(
-        repo: Arc<dyn UsersRepository>,
-        revoker: Arc<dyn AuthRevoker>,
-        auth_with_password_validator: Arc<dyn AuthWithPasswordValidator>,
-    ) -> Self {
-        Self {
-            repo,
-            revoker,
-            auth_with_password_validator,
-        }
-    }
-    pub fn set_repo(&mut self, repo: Arc<dyn UsersRepository>) {
-        self.repo = repo;
-    }
-    pub fn set_revoker(&mut self, revoker: Arc<dyn AuthRevoker>) {
-        self.revoker = revoker;
-    }
-    pub fn set_auth_with_password_validator(
-        &mut self,
-        auth_with_password_validator: Arc<dyn AuthWithPasswordValidator>,
-    ) {
-        self.auth_with_password_validator = auth_with_password_validator;
-    }
 }
 
 pub struct DeleteUserInput {
@@ -98,8 +74,8 @@ mod tests {
         let revoker = Arc::new(AuthRevokerSpy::new());
         let interactor = DeleteUserInteractor::new(
             repo.clone(),
-            revoker.clone(),
             auth_with_password_validator.clone(),
+            revoker.clone(),
         );
         CreationResult {
             interactor,

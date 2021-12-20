@@ -1,42 +1,19 @@
 use std::sync::Arc;
 
+use with_deps_proc_macro::WithDeps;
+
 use crate::errors::ApplicationResult;
 use crate::users::interactors::actions::CHANGE_OTHERS_PASSWORD_ACTION;
 use crate::users::interactors::traits::UsersRepository;
 use crate::utils::{AuthPayload, AuthWithPasswordValidator, CryptoService};
 
+#[derive(WithDeps)]
 pub struct ChangeUsersPasswordInteractor {
     repo: Arc<dyn UsersRepository>,
     crypto: Arc<dyn CryptoService>,
     auth_with_password_validator: Arc<dyn AuthWithPasswordValidator>,
 }
-#[allow(unused)]
-impl ChangeUsersPasswordInteractor {
-    pub fn new(
-        repo: Arc<dyn UsersRepository>,
-        crypto: Arc<dyn CryptoService>,
-        auth_with_password_validator: Arc<dyn AuthWithPasswordValidator>,
-    ) -> Self {
-        Self {
-            repo,
-            crypto,
-            auth_with_password_validator,
-        }
-    }
-    pub fn set_repo(&mut self, repo: Arc<dyn UsersRepository>) {
-        self.repo = repo;
-    }
 
-    pub fn set_crypto(&mut self, crypto: Arc<dyn CryptoService>) {
-        self.crypto = crypto;
-    }
-    pub fn set_auth_with_password_validator(
-        &mut self,
-        auth_with_password_validator: Arc<dyn AuthWithPasswordValidator>,
-    ) {
-        self.auth_with_password_validator = auth_with_password_validator;
-    }
-}
 pub struct ChangeUsersPasswordInput {
     pub user_id: String,
     pub new_password: String,
@@ -53,14 +30,6 @@ impl ChangeUsersPasswordInteractor {
         self.auth_with_password_validator
             .validate_or_fail(auth, &input.password)
             .await?;
-        // let modifier_user = self.auth_resolver.resolve(auth).await?;
-        // if !self
-        //     .authorizer
-        //     .authorize(&modifier_user, &input.password)
-        //     .await?
-        // {
-        //     return Err(BadRequestException("".into()));
-        // }
 
         let mut user = self.repo.get_by_id_or_fail(&input.user_id).await?;
         user.password = self.crypto.hash(&input.new_password).await?;

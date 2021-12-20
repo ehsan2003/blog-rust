@@ -1,5 +1,9 @@
 use std::sync::Arc;
 
+use serde::__private::de;
+
+use with_deps_proc_macro::WithDeps;
+
 use crate::access_management::RoleNamer;
 use crate::errors::ApplicationResult;
 use crate::users::interactors::actions::LIST_USERS_ACTION;
@@ -11,21 +15,11 @@ use crate::utils::AuthPayload;
 pub struct ListUsersOutput {
     pub users: Vec<VisibleUser>,
 }
+
+#[derive(WithDeps)]
 pub struct ListUsersInteractor {
     repo: Arc<dyn UsersRepository>,
     role_namer: Arc<dyn RoleNamer>,
-}
-#[allow(unused)]
-impl ListUsersInteractor {
-    pub fn new(repo: Arc<dyn UsersRepository>, role_namer: Arc<dyn RoleNamer>) -> Self {
-        Self { repo, role_namer }
-    }
-    pub fn set_repo(&mut self, repo: Arc<dyn UsersRepository>) {
-        self.repo = repo;
-    }
-    pub fn set_namer(&mut self, namer: Arc<dyn RoleNamer>) {
-        self.role_namer = namer;
-    }
 }
 
 impl ListUsersInteractor {

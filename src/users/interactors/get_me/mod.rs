@@ -1,31 +1,18 @@
 use std::sync::Arc;
 
+use serde::__private::de;
+
+use with_deps_proc_macro::WithDeps;
+
 use crate::access_management::RoleNamer;
 use crate::errors::ApplicationResult;
 use crate::users::interactors::utils::{get_visible_user, VisibleUser};
 use crate::utils::{AuthPayload, AuthPayloadResolver};
 
+#[derive(WithDeps)]
 pub struct GetMeInteractor {
     pub auth_resolver: Arc<dyn AuthPayloadResolver>,
     pub role_namer: Arc<dyn RoleNamer>,
-}
-#[allow(unused)]
-impl GetMeInteractor {
-    pub fn new(
-        auth_resolver: Arc<dyn AuthPayloadResolver>,
-        role_namer: Arc<dyn RoleNamer>,
-    ) -> Self {
-        GetMeInteractor {
-            auth_resolver,
-            role_namer,
-        }
-    }
-    pub fn set_auth_resolver(&mut self, auth_resolver: Arc<dyn AuthPayloadResolver>) {
-        self.auth_resolver = auth_resolver;
-    }
-    pub fn set_role_namer(&mut self, role_namer: Arc<dyn RoleNamer>) {
-        self.role_namer = role_namer;
-    }
 }
 
 impl GetMeInteractor {

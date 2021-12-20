@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use with_deps_proc_macro::WithDeps;
+
 use crate::errors::validation::ValidationError;
 use crate::errors::ApplicationResult;
 use crate::users::interactors::traits::UsersRepository;
@@ -21,6 +23,8 @@ impl Validatable for ChangeMyPasswordInput {
         Ok(())
     }
 }
+
+#[derive(WithDeps)]
 pub struct ChangeMyPasswordInteractor {
     repo: Arc<dyn UsersRepository>,
     crypto: Arc<dyn CryptoService>,
@@ -28,33 +32,7 @@ pub struct ChangeMyPasswordInteractor {
     auth_payload_resolver: Arc<dyn AuthPayloadResolver>,
 }
 
-#[allow(unused)]
 impl ChangeMyPasswordInteractor {
-    pub fn new(
-        repo: Arc<dyn UsersRepository>,
-        crypto: Arc<dyn CryptoService>,
-        authorizer: Arc<dyn Authorizer>,
-        resolver: Arc<dyn AuthPayloadResolver>,
-    ) -> Self {
-        Self {
-            repo,
-            crypto,
-            authorizer,
-            auth_payload_resolver: resolver,
-        }
-    }
-    pub fn set_repo(&mut self, repo: Arc<dyn UsersRepository>) {
-        self.repo = repo;
-    }
-    pub fn set_crypto(&mut self, crypto: Arc<dyn CryptoService>) {
-        self.crypto = crypto;
-    }
-    pub fn set_authorizer(&mut self, authorizer: Arc<dyn Authorizer>) {
-        self.authorizer = authorizer;
-    }
-    pub fn set_auth_payload_resolver(&mut self, r: Arc<dyn AuthPayloadResolver>) {
-        self.auth_payload_resolver = r;
-    }
     pub async fn execute(
         &self,
         auth: &(dyn AuthPayload),
@@ -109,16 +87,12 @@ mod tests {
         let crypto = Arc::new(CryptoServiceSpy::new_verified());
         let authorizer = Arc::new(AuthorizerSpy::new_authorized());
         let resolver = Arc::new(AuthPayloadResolverSpy::new_returning(resolved_user()));
-        let repo_clone = repo.clone();
-        let crypto_clone = crypto.clone();
-        let authorizer_clone = authorizer.clone();
-        let resolver_clone = resolver.clone();
 
         let interactor = ChangeMyPasswordInteractor::new(
-            repo_clone,
-            crypto_clone,
-            authorizer_clone,
-            resolver_clone,
+            repo.clone(),
+            crypto.clone(),
+            authorizer.clone(),
+            resolver.clone(),
         );
 
         return CreationResult {

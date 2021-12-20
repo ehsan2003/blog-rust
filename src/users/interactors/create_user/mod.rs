@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use with_deps_proc_macro::WithDeps;
 use ApplicationException::*;
 
 use crate::access_management::RoleFactory;
@@ -11,40 +12,12 @@ use crate::users::interactors::traits::UsersRepository;
 use crate::utils::AuthPayload;
 use crate::utils::{CryptoService, RandomService, Validatable};
 
+#[derive(WithDeps)]
 pub struct CreateUserInteractor {
     random_service: Arc<dyn RandomService>,
     crypto_service: Arc<dyn CryptoService>,
     repo: Arc<dyn UsersRepository>,
     role_factory: Arc<dyn RoleFactory>,
-}
-
-#[allow(unused)]
-impl CreateUserInteractor {
-    pub fn new(
-        random_service: Arc<dyn RandomService>,
-        crypto_service: Arc<dyn CryptoService>,
-        repo: Arc<dyn UsersRepository>,
-        role_factory: Arc<dyn RoleFactory>,
-    ) -> Self {
-        CreateUserInteractor {
-            random_service,
-            crypto_service,
-            repo,
-            role_factory,
-        }
-    }
-    pub fn set_random_service(&mut self, s: Arc<dyn RandomService>) {
-        self.random_service = s;
-    }
-    pub fn set_crypto_service(&mut self, s: Arc<dyn CryptoService>) {
-        self.crypto_service = s;
-    }
-    pub fn set_repo(&mut self, r: Arc<dyn UsersRepository>) {
-        self.repo = r;
-    }
-    pub fn set_role_factory(&mut self, r: Arc<dyn RoleFactory>) {
-        self.role_factory = r;
-    }
 }
 
 impl CreateUserInteractor {

@@ -1,1 +1,3 @@
 /target
+/with_deps_proc_macro/target/
+/with_deps_proc_macro/testing/target/

@@ -1,17 +1,16 @@
 use std::sync::Arc;
 
+use with_deps_proc_macro::WithDeps;
+
 use crate::errors::ApplicationResult;
 use crate::utils::{AuthPayload, AuthRevoker};
 
+#[derive(WithDeps)]
 pub struct LogoutInteractor {
     auth_revoker: Arc<dyn AuthRevoker>,
 }
 
 impl LogoutInteractor {
-    pub fn new(auth_revoker: Arc<dyn AuthRevoker>) -> Self {
-        Self { auth_revoker }
-    }
-
     pub async fn execute(&self, auth: &(dyn AuthPayload)) -> ApplicationResult<()> {
         self.auth_revoker.revoke_auth_payload(auth).await?;
         Ok(())

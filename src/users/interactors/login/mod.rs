@@ -1,5 +1,8 @@
 use std::sync::Arc;
 
+use serde::__private::de;
+
+use with_deps_proc_macro::WithDeps;
 use ApplicationException::*;
 
 use crate::access_management::RoleNamer;
@@ -7,6 +10,7 @@ use crate::errors::{ApplicationException, ApplicationResult};
 use crate::users::interactors::traits::UsersRepository;
 use crate::utils::Authorizer;
 
+#[derive(WithDeps)]
 pub struct LoginInteractor {
     pub repo: Arc<dyn UsersRepository>,
     pub authorizer: Arc<dyn Authorizer>,
@@ -27,27 +31,6 @@ const CREDENTIALS_ERROR: &'static str = "invalid credentials";
 
 #[allow(unused)]
 impl LoginInteractor {
-    pub fn new(
-        repo: Arc<dyn UsersRepository>,
-        authorizer: Arc<dyn Authorizer>,
-        role_namer: Arc<dyn RoleNamer>,
-    ) -> Self {
-        Self {
-            repo,
-            authorizer,
-            role_namer,
-        }
-    }
-    pub fn set_repo(&mut self, repo: Arc<dyn UsersRepository>) {
-        self.repo = repo;
-    }
-    pub fn set_authorizer(&mut self, authorizer: Arc<dyn Authorizer>) {
-        self.authorizer = authorizer;
-    }
-    pub fn set_role_namer(&mut self, role_namer: Arc<dyn RoleNamer>) {
-        self.role_namer = role_namer;
-    }
-
     pub async fn execute(&self, input: LoginInput) -> ApplicationResult<LoginOutput> {
         let error = BadRequestException("invalid credentials".into());
         let user = self
