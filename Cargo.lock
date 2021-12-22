@@ -43,6 +43,7 @@ dependencies = [
  "dyn-clone",
  "serde",
  "serde_json",
+ "slug",
  "tokio",
  "validator",
  "with_deps_proc_macro",
@@ -72,6 +73,12 @@ dependencies = [
  "time",
  "winapi",
 ]
+
+[[package]]
+name = "deunicode"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "850878694b7933ca4c9569d30a34b55031b9b139ee1fc7b94a527c4ef960d690"
 
 [[package]]
 name = "dyn-clone"
@@ -363,6 +370,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "slug"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3bc762e6a4b6c6fcaade73e77f9ebc6991b676f88bb2358bddb56560f073373"
+dependencies = [
+ "deunicode",
+]
+
+[[package]]
 name = "smallvec"
 version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -526,6 +542,7 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 [[package]]
 name = "with_deps_proc_macro"
 version = "0.1.0"
+source = "git+https://github.com/ehsan2003/with_deps#27b8fb9efc845db836e2b8b6f8061b919b404337"
 dependencies = [
  "quote",
  "syn",
