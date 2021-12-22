@@ -102,31 +102,24 @@ mod tests {
     use crate::categories::domain::{Category, CategoryId};
     use crate::categories::interactors::actions::CREATE_CATEGORY_ACTION;
     use crate::categories::interactors::test_doubles::fake_categories_repository::FakeCategoriesRepository;
+    use crate::make_interactor_setup;
     use crate::test_utils::access_management::auth_payload_spy::AuthPayloadSpy;
     use crate::test_utils::crypto::random_service_spy::{RandomServiceSpy, RANDOM_ID};
-    use crate::test_utils::errors_assertion::{
-        assert_duplication_error, assert_forbidden_error, assert_not_found_error,
-    };
+    use crate::test_utils::errors_assertion::*;
 
     use super::*;
 
-    struct CreationResult {
-        interactor: CreateCategoryInteractor,
-        repo: Arc<FakeCategoriesRepository>,
-        random: Arc<RandomServiceSpy>,
-    }
-    fn create_interactor() -> CreationResult {
-        let repo = Arc::new(FakeCategoriesRepository::new_with_data(&[
-            existing_category(),
-        ]));
-        let random = Arc::new(RandomServiceSpy::new());
-        let interactor = CreateCategoryInteractor::new(repo.clone(), random.clone());
-        CreationResult {
-            interactor,
-            repo,
-            random,
-        }
-    }
+    make_interactor_setup!(
+        CreateCategoryInteractor,
+        [
+            (
+                repo,
+                FakeCategoriesRepository::new_with_data(&[existing_category()]),
+                FakeCategoriesRepository
+            ),
+            (random, RandomServiceSpy::new(), RandomServiceSpy)
+        ]
+    );
     fn valid_input() -> CreateCategoryInput {
         CreateCategoryInput {
             name: "Test Category".to_string(),
@@ -135,6 +128,7 @@ mod tests {
             parent_id: None,
         }
     }
+
     fn existing_category() -> Category {
         Category {
             id: CategoryId::new("test".into()),
@@ -151,7 +145,6 @@ mod tests {
     #[tokio::test]
     async fn should_throw_error_if_parent_id_does_not_exists() {
         let c = create_interactor();
-
         let mut input = valid_input();
         input.parent_id = Some("NOT FOUND".into());
 
