@@ -2,8 +2,9 @@ use std::sync::Arc;
 
 use chrono::Utc;
 use slug::slugify;
-
 use with_deps_proc_macro::WithDeps;
+
+use ApplicationException::*;
 
 use crate::categories::domain::{Category, CategoryId};
 use crate::categories::interactors::actions::CREATE_CATEGORY_ACTION;
@@ -24,30 +25,17 @@ impl CreateCategoryInteractor {
         input: CreateCategoryInput,
     ) -> ApplicationResult<CreateCategoryOutput> {
         auth.can_or_fail(CREATE_CATEGORY_ACTION)?;
-        let slug = if let Some(s) = input.slug {
-            s.clone()
-        } else {
-            slugify(input.name.clone())
-        };
+
+        let slug = Self::get_slug(&input);
+
         if self.repo.get_by_slug(&slug).await?.is_some() {
-            return Err(ApplicationException::DuplicationException {
+            return Err(DuplicationException {
                 value: slug.into(),
                 key: "slug".into(),
-            }
-            .into());
+            });
         }
-        if let Some(id) = &input.parent_id {
-            if self
-                .repo
-                .get_by_id(&CategoryId::new(id.clone()))
-                .await?
-                .is_none()
-            {
-                return Err(ApplicationException::NotFoundException(
-                    "parent id not found".into(),
-                ));
-            }
-        }
+
+        self.check_parent_id(&input).await?;
 
         let category = Category {
             id: CategoryId::new(self.random.random_id().await?),
@@ -58,14 +46,35 @@ impl CreateCategoryInteractor {
             parent_id: None,
         };
         self.repo.create(&category).await?;
-        Ok(CreateCategoryOutput {
+        Ok(Self::create_output(category))
+    }
+
+    fn get_slug(input: &CreateCategoryInput) -> String {
+        if let Some(s) = &input.slug {
+            s.clone()
+        } else {
+            slugify(input.name.clone())
+        }
+    }
+
+    async fn check_parent_id(&self, input: &CreateCategoryInput) -> ApplicationResult<()> {
+        if let Some(id) = &input.parent_id {
+            self.repo
+                .get_by_id_or_fail(&CategoryId::new(id.clone()))
+                .await?;
+        }
+        Ok(())
+    }
+
+    fn create_output(category: Category) -> CreateCategoryOutput {
+        CreateCategoryOutput {
             id: category.id.to_string(),
             name: category.name,
             slug: category.slug,
             description: category.description,
             created_at: category.created_at.to_string(),
-            parent_id: input.parent_id,
-        })
+            parent_id: category.parent_id.map(|id| id.to_string()),
+        }
     }
 }
 #[derive(Debug, Clone)]
@@ -86,10 +95,9 @@ pub struct CreateCategoryInput {
 }
 #[cfg(test)]
 mod tests {
-    use std::ops::Sub;
     use std::str::FromStr;
 
-    use chrono::{DateTime, Duration, TimeZone, Utc};
+    use chrono::{DateTime, Duration, Utc};
 
     use crate::categories::domain::{Category, CategoryId};
     use crate::categories::interactors::actions::CREATE_CATEGORY_ACTION;
