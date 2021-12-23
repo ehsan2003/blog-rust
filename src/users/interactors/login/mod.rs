@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use with_deps_proc_macro::WithDeps;
+
 use ApplicationException::*;
 
 use crate::access_management::RoleNamer;
@@ -51,6 +52,7 @@ impl LoginInteractor {
 
 #[cfg(test)]
 mod tests {
+    use crate::make_interactor_setup;
     use crate::test_utils::access_management::role_namer_spy::RoleNamerSpy;
     use crate::test_utils::access_management::role_spy::RoleSpy;
     use crate::test_utils::crypto::authorizer_spy::AuthorizerSpy;
@@ -60,13 +62,6 @@ mod tests {
 
     use super::*;
 
-    #[allow(unused)]
-    struct CreationResult {
-        interactor: LoginInteractor,
-        repo: Arc<FakeUsersRepository>,
-        authorizer: Arc<AuthorizerSpy>,
-        role_namer: Arc<RoleNamerSpy>,
-    }
     fn initial_user() -> User {
         User {
             id: "1".into(),
@@ -76,6 +71,7 @@ mod tests {
             name: "name".into(),
         }
     }
+
     fn valid_input() -> LoginInput {
         let initial = initial_user();
         LoginInput {
@@ -83,25 +79,23 @@ mod tests {
             password: initial.password.clone(),
         }
     }
-    fn create_interactor() -> CreationResult {
-        let repo = Arc::new(FakeUsersRepository::new_with_data(&[initial_user()]));
-        let authorizer = Arc::new(AuthorizerSpy::new_authorized());
-        let role_namer = Arc::new(RoleNamerSpy::new_returning("named_role".into()));
 
-        let repo_clone = repo.clone();
-        let authorizer_clone = authorizer.clone();
-        let role_namer_clone = role_namer.clone();
-
-        let interactor = LoginInteractor::new(repo_clone, authorizer_clone, role_namer_clone);
-
-        CreationResult {
-            interactor,
-            repo,
-            authorizer,
-            role_namer,
-        }
-    }
-
+    make_interactor_setup!(
+        LoginInteractor,
+        [
+            (
+                repo,
+                FakeUsersRepository::new_with_data(&[initial_user()]),
+                FakeUsersRepository
+            ),
+            (authorizer, AuthorizerSpy::new_authorized(), AuthorizerSpy),
+            (
+                role_namer,
+                RoleNamerSpy::new_returning("named_role".into()),
+                RoleNamerSpy
+            )
+        ]
+    );
     #[tokio::test]
     async fn should_throw_error_if_user_does_not_exist() {
         let c = create_interactor();

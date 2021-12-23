@@ -1,4 +1,5 @@
 use std::sync::Arc;
+
 use with_deps_proc_macro::WithDeps;
 
 use crate::access_management::RoleNamer;
@@ -33,6 +34,7 @@ impl ListUsersInteractor {
 }
 #[cfg(test)]
 mod tests {
+    use crate::make_interactor_setup;
     use crate::test_utils::access_management::auth_payload_spy::AuthPayloadSpy;
     use crate::test_utils::access_management::role_namer_spy::RoleNamerSpy;
     use crate::test_utils::access_management::role_spy::RoleSpy;
@@ -42,16 +44,26 @@ mod tests {
 
     use super::*;
 
-    pub struct CreationResult {
-        interactor: ListUsersInteractor,
-        repo: Arc<FakeUsersRepository>,
-        role_namer: Arc<RoleNamerSpy>,
-    }
-
     const ROLE_NAME: &'static str = "ROLE";
 
-    fn create_interactor() -> CreationResult {
-        let repo = Arc::new(FakeUsersRepository::new_with_data(&[
+    make_interactor_setup!(
+        ListUsersInteractor,
+        [
+            (
+                repo,
+                FakeUsersRepository::new_with_data(&users()),
+                FakeUsersRepository
+            ),
+            (
+                role_namer,
+                RoleNamerSpy::new_returning(ROLE_NAME.into()),
+                RoleNamerSpy
+            )
+        ]
+    );
+
+    fn users() -> [User; 2] {
+        [
             User {
                 id: "1".to_string(),
                 name: "user1".to_string(),
@@ -66,15 +78,9 @@ mod tests {
                 password: "password".to_string(),
                 role: Box::from(RoleSpy::new_allowed()),
             },
-        ]));
-        let role_namer = Arc::new(RoleNamerSpy::new_returning(ROLE_NAME.into()));
-        let interactor = ListUsersInteractor::new(repo.clone(), role_namer.clone());
-        CreationResult {
-            interactor,
-            repo,
-            role_namer,
-        }
+        ]
     }
+
     #[tokio::test]
     async fn should_refuse_to_list_users_if_user_is_not_allowed() {
         let c = create_interactor();

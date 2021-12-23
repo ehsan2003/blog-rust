@@ -55,6 +55,7 @@ impl ChangeMyPasswordInteractor {
 
 #[cfg(test)]
 mod tests {
+    use crate::make_interactor_setup;
     use crate::test_utils::access_management::auth_payload_resolver_spy::AuthPayloadResolverSpy;
     use crate::test_utils::access_management::auth_payload_spy::AuthPayloadSpy;
     use crate::test_utils::access_management::role_spy::RoleSpy;
@@ -68,41 +69,29 @@ mod tests {
 
     use super::*;
 
-    #[allow(unused)]
-    struct CreationResult {
-        interactor: ChangeMyPasswordInteractor,
-        repo: Arc<FakeUsersRepository>,
-        crypto: Arc<CryptoServiceSpy>,
-        authorizer: Arc<AuthorizerSpy>,
-        auth_resolver: Arc<AuthPayloadResolverSpy>,
-    }
-    fn create_interactor() -> CreationResult {
-        let repo = Arc::new(FakeUsersRepository::new_with_data(&[User {
-            id: auth().get_user_id(),
-            email: "".into(),
-            password: valid_input().old_password,
-            role: Box::from(RoleSpy::new_allowed()),
-            name: "".into(),
-        }]));
-        let crypto = Arc::new(CryptoServiceSpy::new_verified());
-        let authorizer = Arc::new(AuthorizerSpy::new_authorized());
-        let resolver = Arc::new(AuthPayloadResolverSpy::new_returning(resolved_user()));
-
-        let interactor = ChangeMyPasswordInteractor::new(
-            repo.clone(),
-            crypto.clone(),
-            authorizer.clone(),
-            resolver.clone(),
-        );
-
-        return CreationResult {
-            interactor,
-            repo,
-            crypto,
-            authorizer,
-            auth_resolver: resolver,
-        };
-    }
+    make_interactor_setup!(
+        ChangeMyPasswordInteractor,
+        [
+            (
+                repo,
+                FakeUsersRepository::new_with_data(&[User {
+                    id: auth().get_user_id(),
+                    email: "".into(),
+                    password: valid_input().old_password,
+                    role: Box::from(RoleSpy::new_allowed()),
+                    name: "".into(),
+                }]),
+                FakeUsersRepository
+            ),
+            (crypto, CryptoServiceSpy::new_verified(), CryptoServiceSpy),
+            (authorizer, AuthorizerSpy::new_authorized(), AuthorizerSpy),
+            (
+                auth_resolver,
+                AuthPayloadResolverSpy::new_returning(resolved_user()),
+                AuthPayloadResolverSpy
+            )
+        ]
+    );
 
     fn resolved_user() -> User {
         User {

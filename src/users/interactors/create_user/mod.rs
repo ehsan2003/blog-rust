@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use with_deps_proc_macro::WithDeps;
+
 use ApplicationException::*;
 
 use crate::access_management::RoleFactory;
@@ -127,6 +128,7 @@ pub struct CreateUserOutput {
 mod tests {
     use utils::*;
 
+    use crate::make_interactor_setup;
     use crate::test_utils::access_management::auth_payload_spy::AuthPayloadSpy;
     use crate::test_utils::access_management::role_factory_spy::RoleFactorySpy;
     use crate::test_utils::access_management::role_spy::RoleSpy;
@@ -143,39 +145,23 @@ mod tests {
 
     use super::*;
 
-    struct CreationResult {
-        interactor: CreateUserInteractor,
-        repo: Arc<FakeUsersRepository>,
-        role_factory: Arc<RoleFactorySpy>,
-        crypto: Arc<CryptoServiceSpy>,
-        random_service: Arc<RandomServiceSpy>,
-    }
-    fn create_interactor() -> CreationResult {
-        let random_service = Arc::new(RandomServiceSpy::new());
-        let crypto_service = Arc::new(CryptoServiceSpy::new_verified());
-        let repo = Arc::new(FakeUsersRepository::new_empty());
-        let role_factory = Arc::new(RoleFactorySpy::new(Some(Box::from(RoleSpy::new_allowed()))));
-
-        let arc_cloned_random_service = Arc::clone(&random_service);
-        let arc_cloned_crypto_service = Arc::clone(&crypto_service);
-        let arc_cloned_repo = Arc::clone(&repo);
-        let arc_cloned_role_factory = Arc::clone(&role_factory);
-
-        let interactor = CreateUserInteractor::new(
-            arc_cloned_random_service,
-            arc_cloned_crypto_service,
-            arc_cloned_repo,
-            arc_cloned_role_factory,
-        );
-
-        CreationResult {
-            interactor,
-            repo,
-            role_factory,
-            crypto: crypto_service,
-            random_service,
-        }
-    }
+    make_interactor_setup!(
+        CreateUserInteractor,
+        [
+            (random_service, RandomServiceSpy::new(), RandomServiceSpy),
+            (
+                crypto_service,
+                CryptoServiceSpy::new_verified(),
+                CryptoServiceSpy
+            ),
+            (repo, FakeUsersRepository::new_empty(), FakeUsersRepository),
+            (
+                role_factory,
+                RoleFactorySpy::new(Some(Box::from(RoleSpy::new_allowed()))),
+                RoleFactorySpy
+            )
+        ]
+    );
 
     #[tokio::test]
     async fn should_throw_validation_error_when_data_is_invalid() {
@@ -238,7 +224,8 @@ mod tests {
 
         c.interactor.execute(valid_input(), &auth()).await.unwrap();
 
-        c.crypto.assert_hash_calls(&[SECURE_RANDOM_PASSWORD]);
+        c.crypto_service
+            .assert_hash_calls(&[SECURE_RANDOM_PASSWORD]);
     }
     #[tokio::test]
     async fn should_throw_duplication_exception_when_email_already_exists() {

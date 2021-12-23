@@ -19,24 +19,16 @@ impl LogoutInteractor {
 
 #[cfg(test)]
 mod test {
+    use crate::make_interactor_setup;
     use crate::test_utils::access_management::auth_payload_revoker_spy::AuthRevokerSpy;
     use crate::test_utils::access_management::auth_payload_spy::AuthPayloadSpy;
 
     use super::*;
 
-    struct CreationResult {
-        interactor: LogoutInteractor,
-        revoker: Arc<AuthRevokerSpy>,
-    }
-    fn create_interactor() -> CreationResult {
-        let revoker = Arc::new(AuthRevokerSpy::new());
-        let interactor = LogoutInteractor::new(revoker.clone());
-        CreationResult {
-            interactor,
-            revoker,
-        }
-    }
-
+    make_interactor_setup!(
+        LogoutInteractor,
+        [(revoker, AuthRevokerSpy::new(), AuthRevokerSpy)]
+    );
     #[tokio::test]
     async fn should_pass_payload_to_revoker() {
         let c = create_interactor();

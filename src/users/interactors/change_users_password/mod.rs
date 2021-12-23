@@ -40,6 +40,7 @@ impl ChangeUsersPasswordInteractor {
 
 #[cfg(test)]
 mod tests {
+    use crate::make_interactor_setup;
     use crate::test_utils::access_management::auth_payload_spy::AuthPayloadSpy;
     use crate::test_utils::access_management::auth_with_password_validator_spy::AuthWithPasswordValidatorSpy;
     use crate::test_utils::access_management::role_spy::RoleSpy;
@@ -52,12 +53,6 @@ mod tests {
 
     use super::*;
 
-    struct CreationResult {
-        interactor: ChangeUsersPasswordInteractor,
-        repo: Arc<FakeUsersRepository>,
-        crypto: Arc<CryptoServiceSpy>,
-        auth_with_password_validator: Arc<AuthWithPasswordValidatorSpy>,
-    }
     fn modifying_user() -> User {
         User {
             id: "1".into(),
@@ -76,6 +71,7 @@ mod tests {
             role: Box::from(RoleSpy::new_allowed()),
         }
     }
+
     fn valid_input() -> ChangeUsersPasswordInput {
         let initial_user = modifying_user();
 
@@ -85,27 +81,23 @@ mod tests {
             password: "password".into(),
         }
     }
-    fn create_interactor() -> CreationResult {
-        let repo = Arc::new(FakeUsersRepository::new_with_data(&[
-            modifying_user(),
-            modifier_user(),
-        ]));
 
-        let crypto = Arc::new(CryptoServiceSpy::new_verified());
-        let auth_with_password_validator = Arc::new(AuthWithPasswordValidatorSpy::new_verified());
-        let interactor = ChangeUsersPasswordInteractor::new(
-            repo.clone(),
-            crypto.clone(),
-            auth_with_password_validator.clone(),
-        );
-        CreationResult {
-            interactor,
-            repo,
-            crypto,
-            auth_with_password_validator,
-        }
-    }
-
+    make_interactor_setup!(
+        ChangeUsersPasswordInteractor,
+        [
+            (
+                repo,
+                FakeUsersRepository::new_with_data(&[modifying_user(), modifier_user(),]),
+                FakeUsersRepository
+            ),
+            (crypto, CryptoServiceSpy::new_verified(), CryptoServiceSpy),
+            (
+                auth_with_password_validator,
+                AuthWithPasswordValidatorSpy::new_verified(),
+                AuthWithPasswordValidatorSpy
+            )
+        ]
+    );
     #[tokio::test]
     async fn should_throw_error_if_user_id_not_found() {
         let c = create_interactor();

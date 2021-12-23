@@ -39,6 +39,7 @@ impl DeleteUserInteractor {
 
 #[cfg(test)]
 mod tests {
+    use crate::make_interactor_setup;
     use crate::test_utils::access_management::auth_payload_revoker_spy::AuthRevokerSpy;
     use crate::test_utils::access_management::auth_payload_spy::AuthPayloadSpy;
     use crate::test_utils::access_management::auth_with_password_validator_spy::AuthWithPasswordValidatorSpy;
@@ -51,13 +52,6 @@ mod tests {
 
     use super::*;
 
-    struct CreationResult {
-        interactor: DeleteUserInteractor,
-        repo: Arc<FakeUsersRepository>,
-        auth_with_password_validator: Arc<AuthWithPasswordValidatorSpy>,
-        revoker: Arc<AuthRevokerSpy>,
-    }
-
     fn user() -> User {
         User {
             id: "id".into(),
@@ -68,23 +62,22 @@ mod tests {
         }
     }
 
-    fn create_interactor() -> CreationResult {
-        let auth_with_password_validator = Arc::new(AuthWithPasswordValidatorSpy::new_verified());
-        let repo = Arc::new(FakeUsersRepository::new_with_data(&[user()]));
-        let revoker = Arc::new(AuthRevokerSpy::new());
-        let interactor = DeleteUserInteractor::new(
-            repo.clone(),
-            auth_with_password_validator.clone(),
-            revoker.clone(),
-        );
-        CreationResult {
-            interactor,
-            repo,
-            auth_with_password_validator,
-            revoker,
-        }
-    }
-
+    make_interactor_setup!(
+        DeleteUserInteractor,
+        [
+            (
+                repo,
+                FakeUsersRepository::new_with_data(&[user()]),
+                FakeUsersRepository
+            ),
+            (
+                auth_with_password_validator,
+                AuthWithPasswordValidatorSpy::new_verified(),
+                AuthWithPasswordValidatorSpy
+            ),
+            (revoker, AuthRevokerSpy::new(), AuthRevokerSpy)
+        ]
+    );
     #[tokio::test]
     async fn should_throw_not_found_error_if_user_not_found() {
         let c = create_interactor();

@@ -22,6 +22,7 @@ impl GetMeInteractor {
 
 #[cfg(test)]
 mod tests {
+    use crate::make_interactor_setup;
     use crate::test_utils::access_management::auth_payload_resolver_spy::AuthPayloadResolverSpy;
     use crate::test_utils::access_management::auth_payload_spy::AuthPayloadSpy;
     use crate::test_utils::access_management::role_namer_spy::RoleNamerSpy;
@@ -30,23 +31,21 @@ mod tests {
 
     use super::*;
 
-    #[allow(unused)]
-    struct CreationResult {
-        interactor: GetMeInteractor,
-        role_namer: Arc<RoleNamerSpy>,
-        auth_resolver: Arc<AuthPayloadResolverSpy>,
-    }
-    fn create_interactor() -> CreationResult {
-        let role_namer = Arc::new(RoleNamerSpy::new_returning("NAME".to_string()));
-        let auth_resolver = Arc::new(AuthPayloadResolverSpy::new_returning(user()));
-        let interactor = GetMeInteractor::new(auth_resolver.clone(), role_namer.clone());
-        CreationResult {
-            interactor,
-            role_namer,
-            auth_resolver,
-        }
-    }
-
+    make_interactor_setup!(
+        GetMeInteractor,
+        [
+            (
+                auth_resolver,
+                AuthPayloadResolverSpy::new_returning(user()),
+                AuthPayloadResolverSpy
+            ),
+            (
+                role_namer,
+                RoleNamerSpy::new_returning("NAME".to_string()),
+                RoleNamerSpy
+            )
+        ]
+    );
     fn user() -> User {
         User {
             id: "id".into(),
@@ -56,6 +55,7 @@ mod tests {
             name: "name".to_string(),
         }
     }
+
     const AUTH_ID: &str = "ID";
     #[tokio::test]
     async fn should_pass_payload_to_resolver() {
