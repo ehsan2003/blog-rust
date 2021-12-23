@@ -14,8 +14,8 @@ pub struct Category {
 pub struct CategoryId(String);
 
 impl CategoryId {
-    pub fn new(id: String) -> Self {
-        CategoryId(id)
+    pub fn new(id: &str) -> Self {
+        CategoryId(id.into())
     }
 }
 

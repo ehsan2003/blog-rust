@@ -4,12 +4,12 @@ macro_rules! make_interactor_setup {
             struct CreationResult {
                 interactor: $iname,
                 $(
-                    $name: Arc<$type>,
+                    $name: std::sync::Arc<$type>,
                 )+
             }
             fn create_interactor() -> CreationResult {
                 $(
-                    let $name = Arc::new($value);
+                    let $name = std::sync::Arc::new($value);
                 )+
                 let interactor = $iname::new($(
                         $name.clone(),

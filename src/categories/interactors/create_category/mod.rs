@@ -38,7 +38,7 @@ impl CreateCategoryInteractor {
         self.check_parent_id(&input).await?;
 
         let category = Category {
-            id: CategoryId::new(self.random.random_id().await?),
+            id: CategoryId::new(&self.random.random_id().await?),
             name: input.name,
             description: input.description,
             created_at: Utc::now(),
@@ -59,9 +59,7 @@ impl CreateCategoryInteractor {
 
     async fn check_parent_id(&self, input: &CreateCategoryInput) -> ApplicationResult<()> {
         if let Some(id) = &input.parent_id {
-            self.repo
-                .get_by_id_or_fail(&CategoryId::new(id.clone()))
-                .await?;
+            self.repo.get_by_id_or_fail(&CategoryId::new(&id)).await?;
         }
         Ok(())
     }
