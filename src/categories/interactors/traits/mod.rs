@@ -1,6 +1,7 @@
 use crate::categories::domain::{Category, CategoryId};
 use crate::errors::ApplicationException::NotFoundException;
 use crate::errors::{ApplicationResult, UnknownResult};
+use crate::utils::DeletionResult;
 
 #[async_trait::async_trait]
 pub trait CategoriesRepository: Send + Sync {
@@ -8,7 +9,7 @@ pub trait CategoriesRepository: Send + Sync {
     async fn get_all(&self) -> UnknownResult<Vec<Category>>;
     async fn create(&self, category: &Category) -> UnknownResult<Category>;
     async fn update(&self, category: &Category) -> UnknownResult<Category>;
-    async fn delete(&self, id: &CategoryId) -> UnknownResult<()>;
+
     async fn get_by_slug(&self, slug: &str) -> UnknownResult<Option<Category>>;
 
     async fn get_by_slug_or_fail(&self, slug: &str) -> ApplicationResult<Category> {
@@ -22,4 +23,14 @@ pub trait CategoriesRepository: Send + Sync {
             NotFoundException(format!("Category with id {} not found", id.to_string()))
         })
     }
+}
+
+#[async_trait::async_trait]
+pub trait CategoryDeleter: Send + Sync {
+    async fn delete_recursive(&self, id: &CategoryId) -> UnknownResult<DeletionResult>;
+    async fn replace_with(
+        &self,
+        id: &CategoryId,
+        replacement_id: &CategoryId,
+    ) -> UnknownResult<DeletionResult>;
 }

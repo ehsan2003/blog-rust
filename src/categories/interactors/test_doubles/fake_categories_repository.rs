@@ -49,13 +49,6 @@ impl CategoriesRepository for FakeCategoriesRepository {
         Ok(category.clone())
     }
 
-    async fn delete(&self, id: &CategoryId) -> UnknownResult<()> {
-        let mut categories = self.categories.lock().unwrap();
-        let index = categories.iter().position(|c| c.id == *id).unwrap();
-        categories.remove(index);
-        Ok(())
-    }
-
     async fn get_by_slug(&self, slug: &str) -> UnknownResult<Option<Category>> {
         let categories = self.categories.lock().unwrap();
         let category = categories
