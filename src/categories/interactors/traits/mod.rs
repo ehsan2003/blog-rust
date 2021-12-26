@@ -34,3 +34,15 @@ pub trait CategoryDeleter: Send + Sync {
         replacement_id: &CategoryId,
     ) -> UnknownResult<DeletionResult>;
 }
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct CategoryMeta {
+    pub direct_posts_count: i32,
+    pub children_count: i32,
+    pub total_post_count: i32,
+}
+
+#[async_trait::async_trait]
+pub trait CategoryMetaCalculator: Send + Sync {
+    async fn get_meta(&self, id: &CategoryId) -> UnknownResult<Option<CategoryMeta>>;
+}

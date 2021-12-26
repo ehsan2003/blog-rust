@@ -10,7 +10,7 @@ pub struct Category {
     pub parent_id: Option<CategoryId>,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct CategoryId(String);
 
 impl CategoryId {
@@ -22,6 +22,12 @@ impl CategoryId {
 impl ToString for CategoryId {
     fn to_string(&self) -> String {
         self.0.to_string()
+    }
+}
+
+impl Into<String> for CategoryId {
+    fn into(self) -> String {
+        self.0
     }
 }
 
