@@ -26,7 +26,7 @@ pub trait CategoriesRepository: Send + Sync {
 }
 
 #[async_trait::async_trait]
-pub trait CategoryDeleter: Send + Sync {
+pub trait CategoryDeletionUtility: Send + Sync {
     async fn delete_recursive(&self, id: &CategoryId) -> UnknownResult<DeletionResult>;
     async fn replace_with(
         &self,

@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 
 use crate::categories::domain::{Category, CategoryId};
-use crate::categories::interactors::traits::CategoryDeleter;
+use crate::categories::interactors::traits::CategoryDeletionUtility;
 use crate::errors::UnknownResult;
 use crate::utils::DeletionResult;
 
-pub struct CategoryDeleterSpy {
+pub struct CategoryDeletionUtilsSpy {
     recursive_deletion_result: DeletionResult,
     replace_deletion_result: DeletionResult,
 
@@ -15,7 +15,7 @@ pub struct CategoryDeleterSpy {
 }
 
 #[async_trait::async_trait]
-impl CategoryDeleter for CategoryDeleterSpy {
+impl CategoryDeletionUtility for CategoryDeletionUtilsSpy {
     async fn delete_recursive(&self, id: &CategoryId) -> UnknownResult<DeletionResult> {
         self.delete_recursive_calls.lock().unwrap().push(id.clone());
         Ok(self.recursive_deletion_result)
@@ -34,7 +34,7 @@ impl CategoryDeleter for CategoryDeleterSpy {
     }
 }
 
-impl CategoryDeleterSpy {
+impl CategoryDeletionUtilsSpy {
     pub fn new(
         recursive_deletion_result: DeletionResult,
         replace_deletion_result: DeletionResult,
@@ -48,5 +48,11 @@ impl CategoryDeleterSpy {
     }
     pub fn new_default() -> Self {
         Self::new(DeletionResult::Deleted, DeletionResult::Deleted)
+    }
+    pub fn get_delete_recursive_calls(&self) -> Vec<CategoryId> {
+        self.delete_recursive_calls.lock().unwrap().clone()
+    }
+    pub fn get_replace_calls(&self) -> Vec<(CategoryId, CategoryId)> {
+        self.replace_calls.lock().unwrap().clone()
     }
 }

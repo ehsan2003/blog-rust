@@ -6,3 +6,4 @@ pub mod get_by_slug;
 pub mod test_doubles;
 pub mod traits;
 pub mod utils;
+pub mod replace_category;
