@@ -151,4 +151,15 @@ mod tests {
 
         assert_not_found_error(err);
     }
+
+    #[tokio::test]
+    async fn should_pass_id_to_get_meta() {
+        let c = create_interactor();
+        c.interactor.execute(valid_input()).await.unwrap();
+
+        assert_eq!(
+            *c.category_meta_calculator.calls.lock().unwrap(),
+            [valid_input().id.into()]
+        );
+    }
 }
