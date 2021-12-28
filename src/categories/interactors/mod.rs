@@ -7,3 +7,4 @@ pub mod test_doubles;
 pub mod traits;
 pub mod utils;
 pub mod replace_category;
+pub mod delete_recursive_category;
