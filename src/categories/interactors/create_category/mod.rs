@@ -26,7 +26,7 @@ impl CreateCategoryInteractor {
     ) -> ApplicationResult<CreateCategoryOutput> {
         auth.can_or_fail(CREATE_CATEGORY_ACTION)?;
 
-        let slug = Self::get_slug(&input);
+        let slug = input.slug.clone().unwrap_or(slugify(&input.name));
 
         if self.repo.get_by_slug(&slug).await?.is_some() {
             return Err(DuplicationException {
@@ -47,14 +47,6 @@ impl CreateCategoryInteractor {
         };
         self.repo.create(&category).await?;
         Ok(Self::create_output(category))
-    }
-
-    fn get_slug(input: &CreateCategoryInput) -> String {
-        if let Some(s) = &input.slug {
-            s.clone()
-        } else {
-            slugify(input.name.clone())
-        }
     }
 
     async fn check_parent_id(&self, input: &CreateCategoryInput) -> ApplicationResult<()> {
